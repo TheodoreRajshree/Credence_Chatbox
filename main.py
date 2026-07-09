@@ -18,7 +18,7 @@ from jwt_handler import (
     create_token,
     verify_token
 )
-
+from fastapi import FastAPI, HTTPException, Header
 # ==========================
 # ENV
 # ==========================
@@ -48,9 +48,9 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 class QuestionRequest(BaseModel):
-    token: str
+    pass
 class PredefinedChatRequest(BaseModel):
-    token: str
+    # token: str
     message: str | None = None 
     question_id: int
     branch_name: str | None = None
@@ -288,30 +288,69 @@ def validate_user(req: LoginRequest):
             )
         )
     }
-@app.post("/questions")
-def get_questions(req: QuestionRequest):
+# @app.post("/questions")
+# def get_questions(req: QuestionRequest):
 
-    try:
+#     try:
 
-        user = verify_token(req.token)
+#         user = verify_token(req.token)
 
-        role = (user.get("role") or "").lower()
-        # role = (user.get("role") or "").strip().lower()
-        print("ROLE:", role)
-        print("AVAILABLE KEYS:", QUESTIONS.keys())
-        return {
+#         role = (user.get("role") or "").lower()
+#         # role = (user.get("role") or "").strip().lower()
+#         print("ROLE:", role)
+#         print("AVAILABLE KEYS:", QUESTIONS.keys())
+#         return {
 
-            "success": True,
+#             "success": True,
 
-            "role": role,
+#             "role": role,
 
-            "questions": QUESTIONS.get(role, [])
+#             "questions": QUESTIONS.get(role, [])
 
-        }
+#         }
     
 
-    except Exception as e:
+#     except Exception as e:
 
+#         raise HTTPException(
+#             status_code=401,
+#             detail=str(e)
+#         )
+
+
+@app.post("/questions")
+def get_questions(authorization: str = Header(...)):
+
+    try:
+        # Check header format
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid Authorization header"
+            )
+
+        # Extract token
+        token = authorization.replace("Bearer ", "").strip()
+
+        # Verify JWT
+        user = verify_token(token)
+
+        # Get role
+        role = (user.get("role") or "").strip().lower()
+
+        print("ROLE:", role)
+        print("AVAILABLE KEYS:", QUESTIONS.keys())
+
+        return {
+            "success": True,
+            "role": role,
+            "questions": QUESTIONS.get(role, [])
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
         raise HTTPException(
             status_code=401,
             detail=str(e)
@@ -320,12 +359,29 @@ def get_questions(req: QuestionRequest):
 # CHAT
 # ==========================
 
+# @app.post("/predefined-chat")
+# def predefined_chat(req: PredefinedChatRequest):
+
+#     try:
+
+#         user = verify_token(req.token)
 @app.post("/predefined-chat")
-def predefined_chat(req: PredefinedChatRequest):
+def predefined_chat(
+    req: PredefinedChatRequest,
+    authorization: str = Header(...)
+):
 
     try:
 
-        user = verify_token(req.token)
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid Authorization header"
+            )
+
+        token = authorization.replace("Bearer ", "")
+
+        user = verify_token(token)
         print("TOKEN USER =================")
         print(user)
         print(user)

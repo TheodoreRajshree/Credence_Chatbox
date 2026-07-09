@@ -25,6 +25,27 @@ QUESTIONS = {
           }
         ]
       },
+      
+{
+  "id": 3339,
+  "question": "Show vehicle geofence by school, branch or route",
+  "intent": "devices",
+  "function": "get_device_geofence_superadmin",
+  "fields": [
+    {
+      "name": "location_name",
+      "type": "text",
+      "label": "Enter School, Branch or Route Name",
+      "placeholder": "Example: Anandwadi"
+    },
+    {
+      "name": "vehicle_name",
+      "type": "text",
+      "label": "Enter Vehicle Name",
+      "placeholder": "Example: MH31FC7874"
+    }
+  ]
+},
 {
     "id": 400,
     "question": "Show Schools",

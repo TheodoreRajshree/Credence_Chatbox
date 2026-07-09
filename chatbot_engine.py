@@ -367,6 +367,7 @@ def execute_predefined_question(
             "get_school_with_branches_final",
             "get_school_single_branch",
             " get_branchgroup_vehicle_today_distance",
+            "get_device_geofence_superadmin",
 
         ):
 
@@ -402,6 +403,24 @@ def execute_predefined_question(
                 result = engine_method(
         school_name,
         branch_name,
+        role,
+        user
+
+    )
+            elif function_name == "get_device_geofence_superadmin":
+
+                location_name = input_value.get(
+        "location_name"
+    )
+
+                vehicle_input = normalize_vehicle_number(
+        input_value.get("vehicle_input")
+    )
+
+
+                result = engine_method(
+        location_name,
+        vehicle_input,
         role,
         user
     )

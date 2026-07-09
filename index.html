@@ -321,14 +321,11 @@ async function loadQuestions(){
                 method:"POST",
 
                 headers:{
-                    "Content-Type":"application/json"
-                },
+    "Content-Type":"application/json",
+    "Authorization": `Bearer ${token}`
+},
 
-                body:JSON.stringify({
-
-                    token:token
-
-                })
+body: JSON.stringify({})
 
             }
         );
@@ -490,11 +487,13 @@ async function callDirectFunction(opt) {
 
         let response = await fetch("http://127.0.0.1:8000/predefined-chat", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                token: token,
-                question_id: opt.id
-            })
+            headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+},
+body: JSON.stringify({
+    question_id: opt.id
+})
         });
 
         let data = await response.json();
@@ -558,9 +557,8 @@ function buildDynamicForm(question) {
 async function sendDynamicRequest() {
 
     let body = {
-        token: token,
-        question_id: currentQuestion.id
-    };
+    question_id: currentQuestion.id
+};
 
     currentQuestion.fields.forEach(field => {
 
@@ -587,8 +585,9 @@ async function sendDynamicRequest() {
         {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
-            },
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`
+},
             body: JSON.stringify(body)
         }
     );
@@ -702,18 +701,15 @@ async function askQuestion(question_id,questionText){
                 method:"POST",
 
                 headers:{
+    "Content-Type":"application/json",
+    "Authorization": `Bearer ${token}`
+},
 
-                    "Content-Type":"application/json"
+body:JSON.stringify({
 
-                },
+    question_id:question_id
 
-                body:JSON.stringify({
-
-                    token:token,
-
-                    question_id:question_id
-
-                })
+})
 
             }
 

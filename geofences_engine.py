@@ -499,3 +499,121 @@ class GeofencesEngine:
             for g in geofences
 
         ]
+    
+
+
+  
+    from bson import ObjectId
+
+
+    def get_device_geofence_superadmin(
+    self,
+    location_name,
+    vehicle_name,
+    role,
+    user
+):
+
+    # Find vehicle
+        device = self.db["devices"].find_one({
+        "name": vehicle_name
+    })
+
+        if not device:
+            return {
+            "success": False,
+            "message": "Vehicle not found",
+            "data": None
+        }
+
+
+    # Detect school
+        school = self.db["schools"].find_one({
+        "name": location_name
+    })
+
+    # Detect branch
+        branch = self.db["branches"].find_one({
+        "name": location_name
+    })
+
+    # Detect route
+        route = self.db["routes"].find_one({
+        "name": location_name
+    })
+
+
+        location_filter = {}
+
+
+        if branch:
+            location_filter["branchId"] = branch["_id"]
+            location_type = "branch"
+
+        elif school:
+            location_filter["schoolId"] = school["_id"]
+            location_type = "school"
+
+        elif route:
+            location_filter["routeObjId"] = route["_id"]
+            location_type = "route"
+
+        else:
+            return {
+            "success": False,
+            "message": "School/Branch/Route not found",
+            "data": None
+        }
+
+
+    # Verify vehicle belongs to location
+        if location_type == "branch":
+
+            if device.get("branchId") != branch["_id"]:
+                return {
+                "success": False,
+                "message": "Vehicle not assigned to this branch",
+                "data": None
+            }
+
+
+        elif location_type == "school":
+
+            if device.get("schoolId") != school["_id"]:
+                return {
+                "success": False,
+                "message": "Vehicle not assigned to this school",
+                "data": None
+            }
+
+
+        elif location_type == "route":
+
+            if device.get("routeObjId") != route["_id"]:
+                return {
+                "success": False,
+                "message": "Vehicle not assigned to this route",
+                "data": None
+            }
+
+
+    # Find geofence
+        geofence = self.db["geofences"].find_one(
+        location_filter
+    )
+
+
+        if not geofence:
+            return {
+            "success": False,
+            "message": "Geofence not found",
+            "data": None
+        }
+
+
+        return {
+        "success": True,
+        "vehicle": vehicle_name,
+        "locationType": location_type,
+        "data": self.clean(geofence)
+    }
