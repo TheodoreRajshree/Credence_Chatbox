@@ -25,76 +25,76 @@ class BranchGroupEngine:
     # GET BRANCH GROUP PROFILE
     # ====================================
     def get_branch_group_profile(
-        self,
-        group_id,
-        role,
-        user
-    ):
+    self,
+    group_id,
+    role,
+    user
+):
 
-        # ====================================
-        # STEP 1: AUTO GROUP ID
-        # ====================================
+    # ====================================
+    # STEP 1: AUTO GROUP ID
+    # ====================================
 
         if not group_id:
 
             group_id = (
-                user.get("groupId")
-                or user.get("branchGroupId")
-                or user.get("_id")
-            )
-
+            user.get("groupId")
+            or user.get("branchGroupId")
+            or user.get("_id")
+        )
 
         group_value = self._convert_group_id(
-            group_id
-        )
+        group_id
+    )
 
-
-        # ====================================
-        # STEP 2: RBAC FILTER
-        # ====================================
+    # ====================================
+    # STEP 2: RBAC FILTER
+    # ====================================
 
         rbac_filter = get_rbac_filter(
-            role,
-            user,
-            "branchgroups",
-            self.db
-        )
+        role,
+        user,
+        "branchgroups",
+        self.db
+    )
 
-
-        # ====================================
-        # STEP 3: QUERY
-        # ====================================
+    # ====================================
+    # STEP 3: QUERY
+    # ====================================
 
         query = {
 
-            "$and": [
+        "$and": [
 
-                rbac_filter,
+            rbac_filter,
 
-                {
-                    "$or": [
+            {
 
-                        {
-                            "_id": group_value
-                        },
+                "$or": [
 
-                        {
-                            "branchGroupName": str(group_id)
-                        },
+                    {
+                        "_id": group_value
+                    },
 
-                        {
-                            "username": str(group_id)
-                        }
+                    {
+                        "branchGroupName": str(group_id)
+                    },
 
-                    ]
-                }
+                    {
+                        "username": str(group_id)
+                    }
 
-            ]
+                ]
 
-        }
+            }
 
+        ]
 
-        # DEBUG
+    }
+
+    # ====================================
+    # DEBUG
+    # ====================================
 
         print("========== DEBUG ==========")
         print("USER =", user)
@@ -105,117 +105,146 @@ class BranchGroupEngine:
         print("QUERY =", query)
         print("===========================")
 
+    # ====================================
+    # STEP 4: FETCH GROUP
+    # ====================================
 
-
-        # ====================================
-        # STEP 4: FETCH
-        # ====================================
-
-        group = self.db.branchgroups.find_one(
-            query
-        )
-
+        group = self.db["branchgroups"].find_one(
+        query
+    )
 
         if not group:
 
             return {
 
-                "success": False,
-                "error": "Branch group not found"
+            "success": False,
 
-            }
-
-
-
-        # ====================================
-        # STEP 5: RESPONSE
-        # ====================================
-
-        return {
-
-            "success": True,
-
-            "groupId": str(
-                group["_id"]
-            ),
-
-            "branchGroupName":
-                group.get(
-                    "branchGroupName"
-                ),
-
-            "schoolId":
-                str(group["schoolId"])
-                if group.get("schoolId")
-                else None,
-
-
-            "assignedBranch":
-                [
-                    str(x)
-                    for x in group.get(
-                        "AssignedBranch",
-                        []
-                    )
-                ],
-
-
-            "mobileNo":
-                group.get(
-                    "mobileNo"
-                ),
-
-
-            "username":
-                group.get(
-                    "username"
-                ),
-
-
-            "email":
-                group.get(
-                    "email"
-                ),
-
-
-            "role":
-                group.get(
-                    "role"
-                ),
-
-
-            "active":
-                group.get(
-                    "Active"
-                ),
-
-
-            "access":
-                group.get(
-                    "access"
-                ),
-
-
-            "notification":
-                group.get(
-                    "Notification"
-                ),
-
-
-            "fcmToken":
-                group.get(
-                    "fcmToken"
-                ),
-
-
-            "createdAt":
-                group.get(
-                    "createdAt"
-                )
+            "error": "Branch group not found"
 
         }
 
+    # ====================================
+    # STEP 5: FETCH ASSIGNED BRANCH DETAILS
+    # ====================================
 
+        assigned_branch_ids = group.get(
+        "AssignedBranch",
+        []
+    )
+
+        branches = list(
+
+        self.db["branches"].find(
+
+            {
+
+                "_id": {
+
+                    "$in": assigned_branch_ids
+
+                }
+
+            },
+
+            {
+
+                "branchName": 1,
+                "username": 1,
+                "mobileNo": 1,
+                "email": 1,
+                "Active": 1
+
+            }
+
+        )
+
+    )
+
+        assigned_branches = []
+
+        for branch in branches:
+
+            assigned_branches.append({
+
+            "branchId": str(branch["_id"]),
+
+            "branchName": branch.get("branchName"),
+
+            "username": branch.get("username"),
+
+            "mobileNo": branch.get("mobileNo"),
+
+            "email": branch.get("email"),
+
+            "active": branch.get("Active")
+
+        })
+
+    # ====================================
+    # STEP 6: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "groupId": str(
+            group["_id"]
+        ),
+
+        "branchGroupName": group.get(
+            "branchGroupName"
+        ),
+
+        "schoolId": (
+            str(group["schoolId"])
+            if group.get("schoolId")
+            else None
+        ),
+
+        "totalAssignedBranches": len(
+            assigned_branches
+        ),
+
+        "assignedBranches": assigned_branches,
+
+        "mobileNo": group.get(
+            "mobileNo"
+        ),
+
+        "username": group.get(
+            "username"
+        ),
+
+        "email": group.get(
+            "email"
+        ),
+
+        "role": group.get(
+            "role"
+        ),
+
+        "active": group.get(
+            "Active"
+        ),
+
+        "access": group.get(
+            "access"
+        ),
+
+        "notification": group.get(
+            "Notification"
+        ),
+
+        "fcmToken": group.get(
+            "fcmToken"
+        ),
+
+        "createdAt": group.get(
+            "createdAt"
+        )
+
+    }
 
     # ====================================
     # GET ALL ASSIGNED BRANCHES
@@ -1469,6 +1498,8 @@ class BranchGroupEngine:
             output
 
     }
+    from bson import ObjectId
+
     def get_branchgroup_geofences(
     self,
     group_id,
@@ -1476,106 +1507,253 @@ class BranchGroupEngine:
     user
 ):
 
-        print("GROUP ID =", group_id)
-
-
     # =====================================
-    # VALIDATE GROUP
+    # VALIDATE GROUP ID
     # =====================================
 
         if not group_id:
-
-            return {
-            "success": False,
-            "error": "Branch group id missing"
-        }
-
-
-        try:
-
-            group_id = ObjectId(
-            str(group_id)
+            group_id = (
+            user.get("groupId")
+            or user.get("branchGroupId")
+            or user.get("_id")
         )
 
-        except:
-
+        try:
+            group_id = ObjectId(str(group_id))
+        except Exception:
             return {
             "success": False,
-            "error": "Invalid group id"
+            "error": "Invalid branch group id"
         }
-
-
 
     # =====================================
     # FIND BRANCH GROUP
     # =====================================
 
-        group = self.db.branchgroups.find_one(
-        {
-            "_id": group_id
-        }
-    )
-
+        group = self.db["branchgroups"].find_one({
+        "_id": group_id
+    })
 
         if not group:
-
             return {
             "success": False,
             "error": "Branch group not found"
         }
 
-
-
-        school_id = group.get(
-        "schoolId"
-    )
-
-
-        assigned_branches = group.get(
-        "AssignedBranch",
-        []
-    )
-
-
+        school_id = group.get("schoolId")
+        assigned_branches = group.get("AssignedBranch", [])
 
     # =====================================
     # CONVERT IDS
     # =====================================
 
-
         try:
-
-            school_id = ObjectId(
-            str(school_id)
-        )
-
+            school_id = ObjectId(str(school_id))
         except:
-
             pass
-
-
 
         branch_ids = []
 
-
-        for b in assigned_branches:
-
+        for branch in assigned_branches:
             try:
-
-                branch_ids.append(
-                ObjectId(str(b))
-            )
-
+                branch_ids.append(ObjectId(str(branch)))
             except:
+                branch_ids.append(branch)
 
-                branch_ids.append(b)
+        print("GROUP =", group_id)
+        print("SCHOOL =", school_id)
+        print("BRANCH IDS =", branch_ids)
+
+    # =====================================
+    # QUERY
+    # =====================================
+
+        query = {
+        "$or": [
+
+            # School Geofences
+            {
+                "$or": [
+                    {"schoolId": school_id},
+                    {"schoolId": str(school_id)}
+                ]
+            },
+
+            # Branch Geofences
+            {
+                "$or": [
+                    {
+                        "branchId": {
+                            "$in": branch_ids
+                        }
+                    },
+                    {
+                        "branchId": {
+                            "$in": [str(x) for x in branch_ids]
+                        }
+                    }
+                ]
+            }
+
+        ]
+    }
+
+        print("QUERY =", query)
+
+        geofences = list(
+        self.db["geofences"].find(query).sort("createdAt", -1)
+    )
+
+        print("TOTAL GEOFENCES =", len(geofences))
+
+        result = []
+
+        for geo in geofences:
+
+            result.append({
+
+            "geofenceId": str(geo["_id"]),
+
+            "geofenceName": (
+                geo.get("geofenceName")
+                or geo.get("name")
+            ),
+
+            "address": geo.get("address"),
+
+            "description": geo.get("description"),
+
+            "schoolId": (
+                str(geo.get("schoolId"))
+                if geo.get("schoolId")
+                else None
+            ),
+
+            "branchId": (
+                str(geo.get("branchId"))
+                if geo.get("branchId")
+                else None
+            ),
+
+            "type": geo.get("type"),
+
+            "coordinates": geo.get("coordinates"),
+
+            "active": geo.get("Active")
+        })
+
+        return {
+    
+        "success": True,
+
+        "branchGroup": {
+            "groupId": str(group["_id"]),
+            "branchGroupName": group.get("branchGroupName")
+        },
+
+        "count": len(result),
+
+        "geofences": result
+
+    }
 
 
+    def get_branchgroup_specific_branch_geofences(
+    self,
+    group_id,
+    branch_name,
+    role,
+    user
+):
 
-            print("SCHOOL ID =", school_id)
-            print("BRANCH IDS =", branch_ids)
+    # =====================================
+    # GET GROUP ID
+    # =====================================
 
+        if not group_id:
+            group_id = (
+            user.get("groupId")
+            or user.get("branchGroupId")
+            or user.get("_id")
+        )
 
+        try:
+            group_id = ObjectId(str(group_id))
+        except:
+            return {
+            "success": False,
+            "message": "Invalid Branch Group ID"
+        }
+
+    # =====================================
+    # FIND BRANCH GROUP
+    # =====================================
+
+        group = self.db["branchgroups"].find_one({
+        "_id": group_id
+    })
+
+        if not group:
+            return {
+            "success": False,
+            "message": "Branch Group not found."
+        }
+
+        assigned_branches = group.get("AssignedBranch", [])
+
+    # =====================================
+    # FIND BRANCH
+    # =====================================
+
+        branch = self.db["branches"].find_one({
+
+        "$or": [
+
+            {
+                "branchName": {
+                    "$regex": branch_name,
+                    "$options": "i"
+                }
+            },
+
+            {
+                "name": {
+                    "$regex": branch_name,
+                    "$options": "i"
+                }
+            },
+
+            {
+                "username": {
+                    "$regex": branch_name,
+                    "$options": "i"
+                }
+            }
+
+        ]
+
+    })
+
+        if not branch:
+            return {
+            "success": False,
+            "message": "Branch not found."
+        }
+
+        branch_id = branch["_id"]
+
+    # =====================================
+    # CHECK BRANCH BELONGS TO GROUP
+    # =====================================
+
+        if branch_id not in assigned_branches:
+
+            if str(branch_id) not in [str(x) for x in assigned_branches]:
+
+                return {
+                "success": False,
+                "message": "This branch is not assigned to your Branch Group."
+            }
 
     # =====================================
     # RBAC FILTER
@@ -1588,42 +1766,29 @@ class BranchGroupEngine:
         self.db
     )
 
-
-
     # =====================================
-    # GEO FENCE QUERY
+    # FIND GEOFENCES
     # =====================================
-
 
         query = {
 
-        "$and":[
+        "$and": [
 
             rbac_filter,
 
             {
 
-            "$or":[
+                "$or": [
 
-
-                # school geofence
-
-                {
-                    "schoolId": school_id
-                },
-
-
-                # branch geofence
-
-                {
-                    "branchId":
                     {
-                        "$in": branch_ids
+                        "branchId": branch_id
+                    },
+
+                    {
+                        "branchId": str(branch_id)
                     }
-                }
 
-
-            ]
+                ]
 
             }
 
@@ -1631,98 +1796,73 @@ class BranchGroupEngine:
 
     }
 
-
-
-        print(
-        "GEOFENCE QUERY =",
-        query
-    )
-
-
-
         geofences = list(
-        self.db.geofences.find(
-            query
-        )
+
+        self.db["geofences"]
+        .find(query)
+        .sort("createdAt", -1)
+
     )
 
-
-
-        result=[]
-
+        result = []
 
         for geo in geofences:
 
-
             result.append({
 
-            "geofenceId":
-            str(
-                geo["_id"]
+            "geofenceId": str(geo["_id"]),
+
+            "geofenceName": (
+                geo.get("geofenceName")
+                or geo.get("name")
             ),
 
+            "address": geo.get("address"),
 
-            "name":
-            geo.get(
-                "name"
-            ),
+            "description": geo.get("description"),
 
-
-            "description":
-            geo.get(
-                "description"
-            ),
-
-
-            "schoolId":
-            str(
-                geo.get("schoolId")
-            )
-            if geo.get("schoolId")
-            else None,
-
-
-            "branchId":
-            str(
-                geo.get("branchId")
-            )
+            "branchId": str(geo.get("branchId"))
             if geo.get("branchId")
             else None,
 
+            "schoolId": str(geo.get("schoolId"))
+            if geo.get("schoolId")
+            else None,
 
-            "type":
-            geo.get(
-                "type"
-            ),
+            "coordinates": geo.get("coordinates"),
 
+            "type": geo.get("type"),
 
-            "coordinates":
-            geo.get(
-                "coordinates"
-            ),
-
-
-            "active":
-            geo.get(
-                "Active"
-            )
+            "active": geo.get("Active")
 
         })
 
-
-
         return {
-
 
         "success": True,
 
+        "branchGroup": {
 
-        "count":
-        len(result),
+            "groupId": str(group["_id"]),
 
+            "branchGroupName": group.get("branchGroupName")
 
-        "geofences":
-        result
+        },
+
+        "branch": {
+
+            "branchId": str(branch["_id"]),
+
+            "branchName": (
+                branch.get("branchName")
+                or branch.get("name")
+            )
+
+        },
+
+        "count": len(result),
+
+        "geofences": result
 
     }
     def get_branchgroup_travel_summary(

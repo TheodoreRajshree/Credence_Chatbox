@@ -217,41 +217,175 @@ def get_rbac_filter(
 # BRANCH GROUP
 # ==============================
 
+        # ==============================
+# BRANCH GROUP
+# ==============================
+
         if role == "branchgroup":
 
+
             group_id = normalize_id(
-        user["_id"]
+        user.get("groupId")
+        or user.get("_id")
     )
 
-    # Find branch group document
-            branch_group = db.branchgroups.find_one(
-        {
+
+    # branch group collection
+            if collection_name == "branchgroups":
+
+                return {
+
             "_id": group_id
+
         }
-    )
+
+
+    # branches under group
+            if collection_name == "branches":
+
+
+                branch_group = db.branchgroups.find_one({
+
+            "_id": group_id
+
+        })
+
 
             if not branch_group:
 
                 return {
-            "_id": None
-        }
+
+                "_id": None
+
+            }
 
 
-    # Get assigned branches
             assigned_branches = branch_group.get(
-        "AssignedBranch",
-        []
-    )
+            "AssignedBranch",
+            []
+        )
 
 
-    # Allow only assigned branches
             return {
 
-        "_id": {
-            "$in": assigned_branches
+            "_id": {
+
+                "$in": assigned_branches
+
+            }
+
         }
 
-    }
+
+    # devices under group branches
+        if collection_name == "devices":
+
+
+            branch_group = db.branchgroups.find_one({
+
+            "_id": group_id
+
+        })
+
+
+            if not branch_group:
+
+                return {
+
+                "_id": None
+
+            }
+
+
+            assigned_branches = branch_group.get(
+            "AssignedBranch",
+            []
+        )
+
+
+            return {
+
+            "branchId": {
+
+                "$in": assigned_branches
+
+            }
+
+        }
+
+
+    # routes under group branches
+        if collection_name == "routes":
+
+
+            branch_group = db.branchgroups.find_one({
+
+            "_id": group_id
+
+        })
+
+
+            if not branch_group:
+
+                return {
+
+                "_id": None
+
+            }
+
+
+            assigned_branches = branch_group.get(
+            "AssignedBranch",
+            []
+        )
+
+
+            return {
+
+            "branchId": {
+
+                "$in": assigned_branches
+
+            }
+
+        }
+
+
+    # geofences under group branches
+        if collection_name == "geofences":
+
+
+            branch_group = db.branchgroups.find_one({
+
+            "_id": group_id
+
+        })
+
+
+            if not branch_group:
+
+                return {
+
+                "_id": None
+
+            }
+
+
+            assigned_branches = branch_group.get(
+            "AssignedBranch",
+            []
+        )
+
+
+            return {
+
+            "branchId": {
+
+                "$in": assigned_branches
+
+            }
+
+        }
         # ==============================
         # DRIVER
         # ==============================

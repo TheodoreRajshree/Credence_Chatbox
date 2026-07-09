@@ -372,6 +372,7 @@ def execute_predefined_question(
             "get_specific_vehicle_branch_geofences",
             # "get_school_user_branch_geofences",
             "get_specific_vehicle_branch_of_school_geofences",
+            "get_branchgroup_specific_branch_geofences",
 
         ):
 
@@ -408,6 +409,25 @@ def execute_predefined_question(
         school_name,
         branch_name,
         role,
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_branch_geofences":
+
+                branch_name = input_value.get(
+        "branch_name"
+    )
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        branch_name,
+
+        role,
+
         user
 
     )

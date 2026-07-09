@@ -1433,19 +1433,20 @@ QUESTIONS = {
     "id": 1222,
     "question": "Show branch group details",
     "function": "get_branch_group_profile",
+  },
+# }, {
+#     "id": 1229,
+#     "question": "Show branches assign",
+#     "function": "get_assigned_branches",
   
-}, {
-    "id": 1229,
-    "question": "Show branches assign",
-    "function": "get_assigned_branches",
+# },
+# {
+#     "id": 1233,
+#     "question": "Show schools ",
+#     "function": "get_assigned_school_super",
   
-},
+# },{
 {
-    "id": 1233,
-    "question": "Show schools ",
-    "function": "get_assigned_school_super",
-  
-},{
     "id": 12311,
     "question": "Show all vehicle associated ",
     "function": "get_branchgroup_devices",
@@ -1474,6 +1475,19 @@ QUESTIONS = {
     "function": "get_branchgroup_geofences"
 },
 {
+  "id": 12345,
+  "question": "Show Specific Branch Geofences",
+  "intent": "geofence",
+  "function": "get_branchgroup_specific_branch_geofences",
+  "fields": [
+    {
+      "name": "branch_name",
+      "label": "Enter Branch Name",
+      "placeholder": "Mumbai Branch"
+    }
+  ]
+},
+{
     "id": 2223011,
     "question": "Show travel summary of branch group vehicles",
     "intent": "branchgroup_travel_summary",
@@ -1486,12 +1500,12 @@ QUESTIONS = {
     "function": "get_branchgroup_vehicle_status_report"
 },
 
-{
-    "id": 22821344,
-    "question": "Show last locations",
-    "intent": "branchgroup_vehicle_status",
-    "function": "get_branchgroup_vehicle_last_positions"
-},
+# {
+#     "id": 22821344,
+#     "question": "Show last locations",
+#     "intent": "branchgroup_vehicle_status",
+#     "function": "get_branchgroup_vehicle_last_positions"
+# },
 
 {
     "id": 11111111,
