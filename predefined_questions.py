@@ -976,7 +976,49 @@ QUESTIONS = {
 "id":10,
 "question":"Show branch geofences",
 "intent":"geofences",
-"function":"get_branch_geofences"
+"function":"get_branch_geofences",
+"hidden":True,
+},
+{
+    "id": 2119430,
+    "question": "Show geofences for a specific vehicle",
+    "function":"get_specific_vehicle_branch_geofences",
+    "hidden":True,
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "label": "Enter Vehicle Number",
+            "placeholder": "Example: MH31AB1234"
+        }
+    ]
+},
+{
+  "id": 10,
+  "question": "Show branch geofences",
+  "intent": "geofences",
+  "function": "get_branch_geofences",
+  "options": [
+    {
+      "id": 28,
+      "label": "Show all branch geofences",
+      "intent": "all_branch_geofences",
+      "function": "get_branch_geofences"
+    },
+    {
+      "id": 2119430,
+      "label": "Show geofences for a specific vehicle",
+      "intent": "specific_vehicle_geofences",
+      "function": "get_specific_vehicle_branch_geofences",
+      "fields": [
+        {
+          "name": "vehicle_input",
+          "type": "text",
+          "label": "Enter Vehicle Number",
+          "placeholder": "Example: MH31AB1234"
+        }
+      ]
+    }
+  ]
 },
 {
   "id": 11,
@@ -1122,7 +1164,7 @@ QUESTIONS = {
     "id": 18,
     "question": "Show Specific Branch Geofence",
     "intent": "geofence",
-    "function": "get_specific_branch_geofence",
+    "function": "get_specific_vehicle_branch_geofences",
      "hidden":True,
     "fields": [
         {

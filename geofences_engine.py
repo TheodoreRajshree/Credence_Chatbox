@@ -6,8 +6,29 @@ class GeofencesEngine:
 
     def __init__(self, db):
         self.db = db
+    def convert_id(self, value):
 
+        try:
+            return ObjectId(str(value))
+        except:
+            return value
+    def normalize_unique_id(self, unique_id):
 
+        if unique_id is None:
+            return []
+
+        unique_id = str(unique_id)
+
+        values = [
+        unique_id
+    ]
+
+        try:
+            values.append(int(unique_id))
+        except:
+            pass
+
+        return values
     # =====================================
     # CLEAN
     # =====================================
@@ -221,9 +242,185 @@ class GeofencesEngine:
             for g in geofences
 
         ]
+    
+    def get_specific_vehicle_branch_geofences(
+    self,
+    branch_id,
+    vehicle_input,
+    role,
+    user
+):
+
+    # ===============================
+    # Device RBAC Filter
+    # ===============================
+
+        device_filter = get_rbac_filter(
+        role,
+        user,
+        "devices",
+        self.db
+    )
+
+
+    # ===============================
+    # Find Vehicle In Branch
+    # ===============================
+
+        device = self.db["devices"].find_one({
+
+        "$and": [
+
+            device_filter,
+
+            {
+                "$or": [
+                    {
+                        "branchId": self.convert_id(branch_id)
+                    },
+                    {
+                        "branchId": str(branch_id)
+                    }
+                ]
+            },
+
+            {
+                "$or": [
+
+                    {
+                        "vehicleNumber": {
+                            "$regex": vehicle_input,
+                            "$options": "i"
+                        }
+                    },
+
+                    {
+                        "vehicle_name": {
+                            "$regex": vehicle_input,
+                            "$options": "i"
+                        }
+                    },
+
+                    {
+                        "name": {
+                            "$regex": vehicle_input,
+                            "$options": "i"
+                        }
+                    },
+
+                    {
+                        "uniqueId": {
+                            "$regex": vehicle_input,
+                            "$options": "i"
+                        }
+                    }
+
+                ]
+            }
+
+        ]
+
+    })
+
+
+        if not device:
+            return {
+            "success": False,
+            "message": "Vehicle not found in branch."
+        }
 
 
 
+    # ===============================
+    # Find Vehicle Route
+    # ===============================
+
+        route = self.db["routes"].find_one({
+
+        "$or": [
+
+            {
+                "deviceObjId": device["_id"]
+            },
+
+            {
+                "deviceObjId": str(device["_id"])
+            }
+
+        ]
+
+    })
+
+
+        if not route:
+            return {
+            "success": False,
+            "message": "Route not assigned to vehicle."
+        }
+
+
+
+    # ===============================
+    # Find Vehicle Geofence
+    # ===============================
+
+        geofence = self.db["geofences"].find_one({
+
+        "$or": [
+
+            {
+                "routeObjId": route["_id"]
+            },
+
+            {
+                "routeObjId": str(route["_id"])
+            }
+
+        ]
+
+    })
+
+
+        if not geofence:
+            return {
+            "success": False,
+            "message": "Vehicle geofence not found."
+        }
+
+
+
+    # ===============================
+    # Final Response
+    # ===============================
+
+        return {
+
+        "success": True,
+
+        "vehicle": {
+
+            "deviceId": str(device["_id"]),
+
+            "deviceName": (
+                device.get("vehicleNumber")
+                or device.get("vehicle_name")
+                or device.get("name")
+                or "N/A"
+            )
+
+        },
+
+        "route": {
+
+            "routeId": str(route["_id"]),
+
+            "routeNumber": route.get("routeNumber")
+
+        },
+
+        "geofence": self.clean(geofence)
+
+    }
     # =====================================
     # DRIVER GEOFENCES
     # =====================================

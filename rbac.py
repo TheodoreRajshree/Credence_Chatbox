@@ -213,14 +213,43 @@ def get_rbac_filter(
 # BRANCH GROUP
 # ==============================
 
+        # ==============================
+# BRANCH GROUP
+# ==============================
+
         if role == "branchgroup":
 
+            group_id = normalize_id(
+        user["_id"]
+    )
+
+    # Find branch group document
+            branch_group = db.branchgroups.find_one(
+        {
+            "_id": group_id
+        }
+    )
+
+            if not branch_group:
+
+                return {
+            "_id": None
+        }
+
+
+    # Get assigned branches
+            assigned_branches = branch_group.get(
+        "AssignedBranch",
+        []
+    )
+
+
+    # Allow only assigned branches
             return {
 
-                direct_field:
-                normalize_id(
-                    user["_id"]
-        )
+        "_id": {
+            "$in": assigned_branches
+        }
 
     }
         # ==============================

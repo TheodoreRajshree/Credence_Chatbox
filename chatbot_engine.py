@@ -368,6 +368,8 @@ def execute_predefined_question(
             "get_school_single_branch",
             " get_branchgroup_vehicle_today_distance",
             "get_device_geofence_superadmin",
+            "get_branch_vehicle_geofences",
+            "get_specific_vehicle_branch_geofences",
 
         ):
 
