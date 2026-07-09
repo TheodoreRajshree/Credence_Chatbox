@@ -370,6 +370,8 @@ def execute_predefined_question(
             "get_device_geofence_superadmin",
             "get_branch_vehicle_geofences",
             "get_specific_vehicle_branch_geofences",
+            # "get_school_user_branch_geofences",
+            "get_specific_vehicle_branch_of_school_geofences",
 
         ):
 
@@ -422,6 +424,43 @@ def execute_predefined_question(
 
                 result = engine_method(
         location_name,
+        vehicle_input,
+        role,
+        user
+    )
+            elif function_name == "get_school_user_branch_geofences":
+
+                result = engine_method(
+        role,
+        user
+    )  
+            elif function_name == "get_specific_vehicle_branch_of_school_geofences":
+
+                if not isinstance(input_value, dict):
+                    return {
+            "success": False,
+            "message": "Please enter branch name and vehicle name."
+        }
+
+
+                branch_name = input_value.get(
+        "branch_name"
+    )
+
+                vehicle_input = input_value.get(
+        "vehicle_input"
+    )
+
+
+                if not branch_name or not vehicle_input:
+                    return {
+            "success": False,
+            "message": "Branch name and vehicle name required."
+        }
+
+
+                result = engine_method(
+        branch_name,
         vehicle_input,
         role,
         user

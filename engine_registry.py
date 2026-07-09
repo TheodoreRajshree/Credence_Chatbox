@@ -235,6 +235,10 @@ branch_group_engine.get_branchgroup_vehicle_today_distance,
     geofences_engine.get_device_geofence_superadmin,
     "get_specific_vehicle_branch_geofences":
     geofences_engine.get_specific_vehicle_branch_geofences,
+    "get_school_user_branch_geofences":
+    geofences_engine.get_school_user_branch_geofences,
+    "get_specific_vehicle_branch_of_school_geofences":
+    geofences_engine.get_specific_vehicle_branch_of_school_geofences,
 # =====================
 # BRANCH
 # =====================

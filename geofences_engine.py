@@ -814,3 +814,486 @@ class GeofencesEngine:
         "locationType": location_type,
         "data": self.clean(geofence)
     }
+    def get_school_user_branch_geofences(
+    self,
+    role,
+    user,
+    limit=100
+):
+
+    # ===============================
+    # School RBAC Filter
+    # ===============================
+
+        school_filter = get_rbac_filter(
+        role,
+        user,
+        "schools",
+        self.db
+    )
+
+
+    # ===============================
+    # Find School
+    # ===============================
+
+        school = self.db["schools"].find_one(
+        school_filter
+    )
+
+
+        if not school:
+            return {
+            "success": False,
+            "message": "School not found.",
+            "data": []
+        }
+
+
+        school_id = school["_id"]
+
+
+
+    # ===============================
+    # Find Branches Under School
+    # ===============================
+
+        branches = list(
+        self.db["branches"].find({
+
+            "$or":[
+
+                {
+                    "schoolId": school_id
+                },
+
+                {
+                    "schoolId": str(school_id)
+                }
+
+            ]
+
+        })
+    )
+
+
+        if not branches:
+            return {
+            "success": True,
+            "schoolId": str(school_id),
+            "totalGeofences": 0,
+            "geofences": []
+        }
+
+
+
+        branch_ids = [
+        b["_id"]
+        for b in branches
+    ]
+
+
+
+    # ===============================
+    # Geofence RBAC Filter
+    # ===============================
+
+        geofence_filter = get_rbac_filter(
+        role,
+        user,
+        "geofences",
+        self.db
+    )
+
+
+    # ===============================
+    # Find Branch Geofences
+    # ===============================
+
+        geofences = list(
+
+        self.db["geofences"].find({
+
+            "$and":[
+
+                geofence_filter,
+
+                {
+                    "$or":[
+
+                        {
+                            "schoolId": school_id
+                        },
+
+                        {
+                            "schoolId": str(school_id)
+                        }
+
+                    ]
+                },
+
+                {
+                    "branchId":{
+                        "$in": branch_ids
+                    }
+                }
+
+            ]
+
+        })
+
+        .sort(
+            "createdAt",
+            -1
+        )
+
+        .limit(limit)
+
+    )
+
+
+        return {
+
+        "success": True,
+
+        "school": {
+
+            "schoolId": str(school_id),
+
+            "schoolName": school.get("name")
+
+        },
+
+        "totalBranches": len(branches),
+
+        "totalGeofences": len(geofences),
+
+        "geofences":[
+
+            self.clean(g)
+
+            for g in geofences
+
+        ]
+
+    }
+    def get_specific_vehicle_branch_of_school_geofences(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user
+):
+
+    # =====================================
+    # Convert School ID
+    # =====================================
+
+        school_id = user.get("schoolId")
+
+        try:
+            school_obj_id = ObjectId(str(school_id))
+        except:
+            school_obj_id = school_id
+
+
+    # =====================================
+    # Find Branch Under School
+    # =====================================
+
+        branch = self.db["branches"].find_one({
+
+        "$and":[
+
+            {
+                "$or":[
+
+                    {
+                        "schoolId": school_obj_id
+                    },
+
+                    {
+                        "schoolId": str(school_obj_id)
+                    }
+
+                ]
+            },
+
+            {
+
+                "$or":[
+
+                    {
+                        "branchName":{
+                            "$regex": branch_name,
+                            "$options":"i"
+                        }
+                    },
+
+                    {
+                        "name":{
+                            "$regex": branch_name,
+                            "$options":"i"
+                        }
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    })
+
+
+        if not branch:
+
+            return {
+            "success":False,
+            "message":"Branch not found."
+        }
+
+
+        branch_id = branch["_id"]
+
+
+
+    # =====================================
+    # Device RBAC
+    # =====================================
+
+        device_filter = get_rbac_filter(
+        role,
+        user,
+        "devices",
+        self.db
+    )
+
+
+
+    # =====================================
+    # Find Vehicle Under Branch
+    # =====================================
+
+        device = self.db["devices"].find_one({
+
+        "$and":[
+
+            device_filter,
+
+
+            {
+                "$or":[
+
+                    {
+                        "branchId": branch_id
+                    },
+
+                    {
+                        "branchId": str(branch_id)
+                    }
+
+                ]
+            },
+
+
+            {
+                "$or":[
+
+                    {
+                        "vehicleNumber":{
+                            "$regex":vehicle_input,
+                            "$options":"i"
+                        }
+                    },
+
+                    {
+                        "vehicle_name":{
+                            "$regex":vehicle_input,
+                            "$options":"i"
+                        }
+                    },
+
+
+                    {
+                        "name":{
+                            "$regex":vehicle_input,
+                            "$options":"i"
+                        }
+                    },
+
+
+                    {
+                        "uniqueId":{
+                            "$regex":vehicle_input,
+                            "$options":"i"
+                        }
+                    }
+
+                ]
+            }
+
+        ]
+
+    })
+
+
+        if not device:
+
+            return {
+            "success":False,
+            "message":"Vehicle not found in this branch."
+        }
+
+
+
+        device_id = device["_id"]
+
+
+
+    # =====================================
+    # Find Route
+    # =====================================
+
+        route = self.db["routes"].find_one({
+
+        "$or":[
+
+            {
+                "deviceObjId":device_id
+            },
+
+            {
+                "deviceObjId":str(device_id)
+            }
+
+        ]
+
+    })
+
+
+        if not route:
+
+            return {
+            "success":False,
+            "message":"Route not assigned to vehicle."
+        }
+
+
+
+    # =====================================
+    # Find Geofence
+    # =====================================
+
+        geofence_filter = get_rbac_filter(
+        role,
+        user,
+        "geofences",
+        self.db
+    )
+
+
+        geofence = self.db["geofences"].find_one({
+
+        "$and":[
+
+
+            geofence_filter,
+
+
+            {
+
+                "$or":[
+
+                    {
+                        "routeObjId":route["_id"]
+                    },
+
+                    {
+                        "routeObjId":str(route["_id"])
+                    }
+
+                ]
+
+            },
+
+
+            {
+
+                "$or":[
+
+                    {
+                        "branchId":branch_id
+                    },
+
+                    {
+                        "branchId":str(branch_id)
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    })
+
+
+        if not geofence:
+
+            return {
+            "success":False,
+            "message":"Geofence not found for vehicle."
+        }
+
+
+
+    # =====================================
+    # Final Response
+    # =====================================
+
+        return {
+
+        "success":True,
+
+
+        "branch":{
+
+            "branchId":str(branch_id),
+
+            "branchName":(
+                branch.get("branchName")
+                or branch.get("name")
+            )
+
+        },
+
+
+        "vehicle":{
+
+            "deviceId":str(device["_id"]),
+
+            "deviceName":(
+                device.get("vehicleNumber")
+                or device.get("vehicle_name")
+                or device.get("name")
+                or "N/A"
+            ),
+
+            "uniqueId":device.get("uniqueId")
+
+        },
+
+
+        "route":{
+
+            "routeId":str(route["_id"]),
+
+            "routeNumber":route.get("routeNumber")
+
+        },
+
+
+        "geofence":self.clean(geofence)
+
+    }

@@ -606,7 +606,47 @@ QUESTIONS = {
       }
     ]
   },
+  {
+    "id": 777,
+    "question": "Show branch geofences ",
+    "intent": "geofence",
+    "function": "get_school_user_branch_geofences",
+  },
+  {
+  "id": 777544399,
+  "question": "Show Specific Branch Vehicle Geofence",
+  "intent": "geofence",
+  "function": "get_school_user_branch_geofences",
+  
+  "fields": [
+    {
+      "name": "branch_name",
+      "label": "Enter Branch Name",
+      "placeholder": "Anandwadi Branch"
+    }
+  ]
+},
 
+{
+  "id": 778111,
+  "question": "Show specific branch speciifc vehicle geofence",
+  "intent": "geofence",
+  "function": "get_specific_vehicle_branch_of_school_geofences",
+  
+  "fields": [
+    {
+      "name": "branch_name",
+      "label": "Enter Branch Name",
+      "placeholder": "Anandwadi Branch"
+    },
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH28BB7564 or 866221070659540"
+    }
+  ]
+}
+,
   {
     "id": 33,
     "question": "Show Specific School Vehicle Daily Distance",
