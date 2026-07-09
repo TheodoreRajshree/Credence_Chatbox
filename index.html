@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Assistant</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+
+<style>
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #0b1020, #1b2a4a);
+}
+
+/* ===== MAIN APP LAYOUT ===== */
+.app-container {
+    width: 95%;
+    height: 92vh;
+    display: flex;
+    border-radius: 20px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+/* ===== LEFT SIDEBAR ===== */
+.chat-input-area {
+    width: 300px;
+    padding: 18px;
+    background: rgba(10, 15, 35, 0.85);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* BUTTONS */
+.chat-btn {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chat-btn:hover {
+    background: rgba(255,255,255,0.14);
+    transform: translateX(4px);
+}
+
+/* ===== CHAT AREA ===== */
+/* ===== CHAT AREA ===== */
+#chat-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+
+    padding: 0;          /* Remove all padding */
+    gap: 0;              /* Remove gap */
+}
+
+/* WELCOME HEADER */
+.welcome-box {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    margin: 0;
+    border-radius: 0;
+
+    width: 100%;
+    padding: 24px;
+
+    background: linear-gradient(135deg, #1b2a6b, #0a0a63);
+    color: white;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+/* ===== USER MESSAGE ===== */
+.user-message {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #4f8cff, #2d5bff);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 14px 14px 4px 14px;
+    max-width: 60%;
+    font-size: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+/* ===== BOT MESSAGE ===== */
+.bot-message {
+    align-self: flex-start;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff;
+    padding: 14px 16px;
+    border-radius: 14px 14px 14px 4px;
+    max-width: 75%;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* ===== INPUT / FORMS ===== */
+#dynamic-form{
+    width:340px;
+    margin:10px 0 15px auto;   /* align with user message */
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+#dynamic-form label{
+    color:white;
+    font-size:13px;
+}
+
+#dynamic-form input{
+    width:100%;
+    height:42px;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+    outline:none;
+    font-size:14px;
+}
+
+#dynamic-form .chat-btn{
+    width:120px;
+    align-self:flex-end;
+    text-align:center;
+}
+
+/* ===== QUICK BUTTONS ===== */
+#quick-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+}
+
+/* ===== OPTIONAL DECORATIONS ===== */
+.overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(0,0,40,0.4),
+        rgba(0,20,80,0.6)
+    );
+    z-index: -1;
+}
+
+.bg-image {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(10px) brightness(0.6);
+    z-index: 0;
+}
+.welcome-box {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: linear-gradient(135deg, #1b2a6b, #0a0a63);
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<img src="background.jpg" class="bg-image">
+<div class="overlay"></div>
+
+<div class="app-container">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="chat-input-area">
+        <div id="question-buttons"></div>
+        <div id="main-questions"></div>
+        <div id="nested-panel"></div>
+    </div>
+
+    <!-- CHAT AREA -->
+    <div id="chat-box">
+
+        <div class="welcome-box">
+            Welcome aboard! How can I help you out?
+        </div>
+
+        <div id="quick-questions"></div>
+
+        <!-- <div id="dynamic-form" style="display:none"></div> -->
+
+    </div>
+
+</div>
+
+</body>
+
+
+
+
+
+<script>
+
+let token = localStorage.getItem("token");
+
+if(!token){
+    window.location.href = "login.html";
+}
+
+const chatBox = document.getElementById("chat-box");
+const buttonArea = document.querySelector(".chat-input-area");
+const questionButtons = document.getElementById("question-buttons");
+// const vehicleBox = document.getElementById("vehicle-input-box");
+// const vehicleInput = document.getElementById("vehicle-input");
+// let currentQuestion = null;
+function addMessage(text, type){
+
+    let div=document.createElement("div");
+
+    div.className=type;
+
+    div.innerText=text;
+
+    chatBox.appendChild(div);
+
+    div.scrollIntoView({
+
+        behavior:"smooth",
+
+        block:"start"
+
+    });
+
+}
+
+let currentQuestion = null;
+function renderResponse(res) {
+
+    if (!res.success) {
+        addMessage(res.message || "Error", "bot-message");
+        return;
+    }
+
+    const data = res.data;
+
+    // ✅ VEHICLE LIST FIX
+    if (Array.isArray(data)) {
+
+        let text = `🚗 Total Records: ${data.length}\n\n`;
+
+        data.slice(0, 5).forEach((v, i) => {
+            text += `Vehicle ${i + 1}\n`;
+            text += `Name: ${v.vehicleName}\n`;
+            text += `Status: ${v.status}\n`;
+            text += `Speed: ${v.speed}\n`;
+            text += `KM: ${v.totalKm}\n\n`;
+        });
+
+        addMessage(text, "bot-message");
+        return;
+    }
+
+    // single object
+    addMessage(formatResponse(data), "bot-message");
+}
+async function loadQuestions(){
+
+    try{
+
+        let response = await fetch(
+            "http://127.0.0.1:8000/questions",
+            {
+
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"application/json"
+                },
+
+                body:JSON.stringify({
+
+                    token:token
+
+                })
+
+            }
+        );
+
+        let data = await response.json();
+        console.log("Questions from API:", data.questions);
+
+        if(!data.success){
+
+            addMessage(
+                "Unable to load questions",
+                "bot-message"
+            );
+
+            return;
+
+        }
+
+        // buttonArea.innerHTML = "";
+        // buttonArea.querySelectorAll(".chat-btn").forEach(btn => btn.remove());
+        const main = document.getElementById("main-questions");
+        main.innerHTML = "";
+
+        data.questions.forEach(q => {
+
+    // Hide questions marked as hidden
+            if (q.hidden === true) {
+                return;
+    }
+
+            let btn = document.createElement("button");
+
+            btn.className = "chat-btn";
+
+            btn.innerText = q.question;
+
+
+
+            btn.onclick = function () {
+
+            currentQuestion = q;
+
+    // CASE 1: HAS OPTIONS (NEW NESTED MENU)
+            if (q.options && q.options.length > 0) {
+
+                showOptions(q.options, q.question);
+                return;
+    }
+
+    // CASE 2: DIRECT FORM
+            if (q.fields) {
+                buildDynamicForm(q);
+                return;
+    }
+
+    // CASE 3: DIRECT API CALL
+            askQuestion(q.id, q.question);
+};
+
+            // buttonArea.appendChild(btn);
+            questionButtons.appendChild(btn);
+
+        });
+
+
+        let refresh = document.createElement("button");
+
+        refresh.className="chat-btn";
+
+        refresh.innerHTML="↻";
+
+        refresh.onclick=function(){
+
+            location.reload();
+
+        };
+
+        buttonArea.appendChild(refresh);
+
+    }
+
+    catch(err){
+
+        console.log(err);
+
+        addMessage(
+            "Failed to load questions",
+            "bot-message"
+        );
+
+    }
+
+}
+function showOptions(options, parentTitle) {
+
+    questionButtons.innerHTML = "";
+
+    addMessage(parentTitle, "user-message");
+
+    options.forEach(opt => {
+
+    // Hide hidden options
+        if (opt.hidden === true) {
+            return;
+    }
+
+        let btn = document.createElement("button");
+        btn.className = "chat-btn";
+        btn.innerText = opt.label;
+
+        btn.onclick = function () {
+
+            // IF OPTION HAS FORM
+            if (opt.fields) {
+
+                currentQuestion = opt;
+                buildDynamicForm(opt);
+
+            } else {
+
+                // DIRECT API CALL
+                // askQuestion(opt.id || currentQuestion.id, opt.label, opt.function);
+                // askQuestion(opt.id, opt.label);
+                if (opt.function) {
+    callDirectFunction(opt);
+} else {
+    askQuestion(opt.id, opt.label);
+}
+            }
+        };
+
+        questionButtons.appendChild(btn);
+    });
+
+    // back button
+    let backBtn = document.createElement("button");
+    backBtn.className = "chat-btn";
+    backBtn.innerText = "⬅ Back";
+
+    backBtn.onclick = function () {
+    loadQuestions();
+    questionButtons.innerHTML = "";
+};
+
+    questionButtons.appendChild(backBtn);
+}
+async function callDirectFunction(opt) {
+
+    addMessage(
+    opt.question || opt.label,
+    "user-message"
+);
+    let loading = document.createElement("div");
+    loading.className = "bot-message";
+    loading.innerText = "Loading...";
+    chatBox.appendChild(loading);
+
+    try {
+
+        let response = await fetch("http://127.0.0.1:8000/predefined-chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                token: token,
+                question_id: opt.id
+            })
+        });
+
+        let data = await response.json();
+        loading.remove();
+
+        if (data.success) {
+            addMessage(formatResponse(data.data), "bot-message");
+        } else {
+            addMessage(data.message, "bot-message");
+        }
+
+    } catch (err) {
+        loading.remove();
+        addMessage("Error occurred", "bot-message");
+    }
+}
+document.getElementById("nested-panel").innerHTML = "";
+function buildDynamicForm(question) {
+
+    currentQuestion = question;
+
+    // Show user message
+    addMessage(question.question || question.label, "user-message");
+
+    // Remove previous form
+    let oldForm = document.getElementById("dynamic-form");
+    if (oldForm) oldForm.remove();
+
+    // Create form
+    let form = document.createElement("div");
+    form.id = "dynamic-form";
+
+    question.fields.forEach(field => {
+
+        let label = document.createElement("label");
+        label.innerText = field.label;
+
+        let input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = field.placeholder;
+        input.id = field.name;
+
+        form.appendChild(label);
+        form.appendChild(input);
+    });
+
+    let btn = document.createElement("button");
+    btn.className = "chat-btn";
+    btn.innerText = "Send";
+    btn.onclick = sendDynamicRequest;
+
+    form.appendChild(btn);
+
+    // Add form AFTER the user message
+    chatBox.appendChild(form);
+
+    form.scrollIntoView({
+        behavior: "smooth"
+    });
+}
+async function sendDynamicRequest() {
+
+    let body = {
+        token: token,
+        question_id: currentQuestion.id
+    };
+
+    currentQuestion.fields.forEach(field => {
+
+        let value = document.getElementById(field.name).value;
+
+        // Normalize vehicle input
+        if (field.name === "vehicle_input") {
+            value = value
+                .trim()              // Remove spaces from start/end
+                .replace(/\s+/g, "") // Remove ALL spaces
+                .toUpperCase();      // Convert to uppercase
+        }
+
+        body[field.name] = value;
+
+    });
+
+    console.log("Request Body:", body); // Check browser console
+
+    document.getElementById("dynamic-form").style.display = "none";
+
+    let response = await fetch(
+        "http://127.0.0.1:8000/predefined-chat",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        }
+    );
+
+    let data = await response.json();
+
+    if (data.success) {
+        renderResponse(data);
+    } else {
+        addMessage(data.message || data.error, "bot-message");
+    }
+}
+// ==========================
+// UNIVERSAL RESPONSE FORMATTER
+// ==========================
+function formatResponse(data, indent = "") {
+
+    if (data === null || data === undefined) {
+        return "No data found.";
+    }
+
+    if (typeof data !== "object") {
+        return String(data);
+    }
+
+    if (Array.isArray(data)) {
+
+        if (data.length === 0)
+            return "No records found.";
+
+        let text = "";
+
+        data.forEach((item, index) => {
+            text += `Record ${index + 1}\n`;
+            text += formatResponse(item, "   ");
+            text += "\n\n";
+        });
+
+        return text;
+    }
+
+    let text = "";
+
+    for (let key in data) {
+
+        let value = data[key];
+
+        let label = key
+            .replace(/([A-Z])/g, " $1")
+            .replace(/_/g, " ")
+            .replace(/^./, c => c.toUpperCase());
+
+        if (typeof value === "object" && value !== null) {
+
+            text += `${indent}${label}:\n`;
+            text += formatResponse(value, indent + "   ");
+
+        } else {
+
+            if (typeof value === "boolean") {
+                value = value ? "Yes" : "No";
+            }
+
+            text += `${indent}${label}: ${value}\n`;
+        }
+    }
+
+    return text;
+}
+
+
+async function askQuestion(question_id,questionText){
+    console.log("Inside askQuestion:", question_id);
+    addMessage(
+
+        questionText,
+
+        "user-message"
+
+    );
+
+     // ONLY SHOW INPUT, DO NOT CALL API HERE
+    // if(question_id === 13){
+    //     console.log("Opening vehicle input...");
+    //     addMessage("Please enter Vehicle Name or ID","bot-message");
+    //     vehicleBox.style.display = "flex";
+    //     return;
+    // }
+     console.log("Calling API...");
+
+    let loading=document.createElement("div");
+
+    loading.className="bot-message";
+
+    loading.innerText="Loading...";
+
+    chatBox.appendChild(loading);
+
+    chatBox.scrollTop=chatBox.scrollHeight;
+
+
+
+    try{
+
+        let response=await fetch(
+
+            "http://127.0.0.1:8000/predefined-chat",
+
+            {
+
+                method:"POST",
+
+                headers:{
+
+                    "Content-Type":"application/json"
+
+                },
+
+                body:JSON.stringify({
+
+                    token:token,
+
+                    question_id:question_id
+
+                })
+
+            }
+
+        );
+
+
+        let data=await response.json();
+
+        loading.remove();
+
+
+        if(data.success){
+
+            renderResponse(data);
+
+        }
+
+        else{
+
+            addMessage(
+
+                data.error || data.message,
+
+                "bot-message"
+
+            );
+
+        }
+
+    }
+
+    catch(error){
+
+        loading.remove();
+
+        addMessage(
+
+            "Server connection error",
+
+            "bot-message"
+
+        );
+
+        console.log(error);
+
+    }
+
+}
+
+
+loadQuestions();
+
+</script>
+
+
+</body>
+
+</html>

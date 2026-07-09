@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Login</title>
+
+<style>
+
+body{
+    font-family: Arial;
+    background:#f2f2f2;
+}
+
+.box{
+
+    width:350px;
+    margin:100px auto;
+    background:white;
+    padding:30px;
+    border-radius:10px;
+
+}
+
+input{
+
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+
+}
+
+
+button{
+
+    width:100%;
+    padding:10px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    cursor:pointer;
+
+}
+
+#error{
+
+    color:red;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="box">
+
+
+<h2>Login</h2>
+
+
+<input id="username"
+placeholder="Username / Email / Mobile">
+
+
+<input id="password"
+type="password"
+placeholder="Password">
+
+
+<button onclick="login()">
+Login
+</button>
+
+
+<p id="error"></p>
+
+
+</div>
+
+
+
+<script>
+
+
+async function login(){
+
+
+let username =
+document.getElementById("username").value;
+
+
+let password =
+document.getElementById("password").value;
+
+
+
+let response = await fetch(
+"http://127.0.0.1:8000/validate-user",
+
+{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+username:username,
+password:password
+
+})
+
+});
+
+
+let data = await response.json();
+
+
+
+if(data.success){
+
+
+    // store token
+
+    localStorage.setItem(
+        "token",
+        data.token
+    );
+
+
+    // store user details
+
+    localStorage.setItem(
+        "role",
+        data.role
+    );
+
+
+    localStorage.setItem(
+        "username",
+        data.username
+    );
+
+
+    localStorage.setItem(
+        "schoolId",
+        data.schoolId
+    );
+
+
+    localStorage.setItem(
+        "branchId",
+        data.branchId
+    );
+
+
+    localStorage.setItem(
+        "deviceObjId",
+        data.deviceObjId
+    );
+
+
+    localStorage.setItem(
+        "routeObjId",
+        data.routeObjId
+    );
+
+
+
+    window.location.href =
+    "index.html";
+
+
+}
+else{
+
+
+document.getElementById("error").innerHTML =
+"Invalid Login";
+
+
+}
+
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
