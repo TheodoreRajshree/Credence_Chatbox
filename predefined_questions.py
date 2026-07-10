@@ -1429,50 +1429,211 @@ QUESTIONS = {
 ]
 , 
 "branchgroup": [
+    {
+    "id": 1233,
+    "question": "Branchgroup Profile ",
+    "function": "get_branch_group_profile_only",
+  
+},
   {
     "id": 1222,
-    "question": "Show branch group details",
+    "question": "All Assign branches",
     "function": "get_branch_group_profile",
   },
-# }, {
-#     "id": 1229,
-#     "question": "Show branches assign",
-#     "function": "get_assigned_branches",
-  
-# },
-# {
-#     "id": 1233,
-#     "question": "Show schools ",
-#     "function": "get_assigned_school_super",
-  
-# },{
+
 {
+    "id": 1225,
+    "question": "Specific branch  Profile",
+    "intent": "branchgroup",
+    "function": "get_branchgroup_specific_branch",
+
+    "fields":[
+        {
+            "name":"branch_name",
+            "label":"Enter Branch Name",
+            "placeholder":"Mumbai Branch"
+        }
+    ]
+},
+ 
+ {
     "id": 12311,
-    "question": "Show all vehicle associated ",
+    "question": "School Profile",
+    "function": "get_assigned_school_branchgroup",
+  
+},
+{
+    "id": 123101,
+    "question": "All vehicle of Branchgroup",
     "function": "get_branchgroup_devices",
   
 },
-    
+{
+  "id": 88944445,
+  "question": "Specific Vehicle of bg",
+  "intent": "vehicle",
+  "function": "get_branchgroup_specific_vehicle",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "MH05FJ3989"
+    }
+  ]
+},
+ {
+  "id": 8889,
+  "question": "Specific Vehicle of Branch",
+  "intent": "vehicle",
+  "function": "get_branchgroup_specific_branch_vehicles",
+  "fields": [
+    {
+      "name": "branch_name",
+      "label": "Enter Branch Name",
+      "placeholder": "Mumbai Branch"
+    },
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Vehicle Number",
+      "placeholder": "Bus 101 / MH12AB1234"
+    }
+  ]
+},
+{
+  "id": 88913,
+  "question": "School Specific  vehicle ",
+  "intent": "vehicle",
+  "function": "get_branchgroup_school_vehicle",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "MH05FJ3989"
+    }
+  ]
+},
+
+# {
+#   "id": 8892236,
+#   "question": "Show Geofences for a Specific Vehicle",
+#   "intent": "geofence",
+#   "function": "get_branchgroup_specific_vehicle_geofence",
+#   "fields": [
+#     {
+#       "name": "vehicle_input",
+#       "label": "Enter Vehicle Name or Number",
+#       "placeholder": "MH05FJ3989"
+#     }
+#   ]
+# },
+{
+  "id": 88922137,
+  "question": "Show Specific Branch Vehicle Geofence",
+  "intent": "geofence",
+  "function": "get_branchgroup_specific_branch_vehicle_geofence",
+  "fields": [
+    {
+      "name": "branch_name",
+      "label": "Enter Branch Name",
+      "placeholder": "Mumbai Branch"
+    },
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+},
+
+
 
 {
-    "id": 22222,
-    "question": "Show vehicle devices by school or branch",
-    "intent": "branchgroup_vehicle_devices",
-    "function": "get_branchgroup_vehicle_school_branch",
-    
+    "id": 88,
+    "question": "Show school vehicle geofence",
+    "function": "get_branchgroup_school_vehicle_geofence",
+    "fields":[
+        {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "MH05GA1153"
+    }
+    ]
 },
-{
-    "id": 222299,
-    "question": "Show today's distance report for branch group vehicle",
-    "intent": "branchgroup_vehicle_distance",
-    "function": "get_branchgroup_vehicle_today_distance",
-    
-},
+
+
+
 {
     "id": 222306,
     "question": "Show branch group geofences",
     "intent": "branchgroup_geofence",
     "function": "get_branchgroup_geofences"
+},
+
+
+{
+    "id": 222299,
+    "question": "Show today's distance report for branch group vehicle",
+    "intent": "branchgroup_vehicle_distance",
+    "function": "get_branchgroup_vehicle_today_distance",
+},
+{
+  "id": 8845922138,
+  "question": "Show specific branch vehicle today's distance",
+  "function": "get_branchgroup_specific_branch_vehicle_today_distance",
+  "fields": [
+    {
+      "name": "branch_name",
+      "label": "Enter Branch Name",
+      "placeholder": "Mumbai Branch"
+    },
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+},
+
+{
+    "id": 59,
+    "question": "Show branchgroup daily distance",
+    "function": "get_branchgroup_vehicle_today_distance",
+    "fields":[
+        {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "MH05GA1153"
+    }
+    ]
+},
+{
+ "id": 9865322,
+ "question": "Show branch vehicle km distance report",
+ "function": "get_branchgroup_specific_branch_vehicle_km_report",
+ "fields": [
+    {
+      "name": "branch_name",
+      "label": "Enter Branch Name",
+      "placeholder": "Mumbai Branch"
+    },
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+},
+{
+    "id": 9812365323,
+    "question": "Show branch group vehicle km distance report",
+    "function": "get_branchgroup_vehicle_km_report",
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "label": "Enter Vehicle Name or Number",
+            "placeholder": "MH05GA0884"
+        }
+    ]
 },
 {
   "id": 12345,

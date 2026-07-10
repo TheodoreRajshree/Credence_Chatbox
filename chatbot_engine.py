@@ -373,6 +373,18 @@ def execute_predefined_question(
             # "get_school_user_branch_geofences",
             "get_specific_vehicle_branch_of_school_geofences",
             "get_branchgroup_specific_branch_geofences",
+            "get_branchgroup_specific_branch",
+            "get_branchgroup_specific_branch_vehicles",
+            "get_branchgroup_specific_branch_vehicle_geofence",
+            "get_branchgroup_school_vehicle_geofence",
+            "get_branchgroup_specific_branch_vehicle_today_distance",
+            "get_branchgroup_specific_branch_vehicle_km_report",
+            "get_branchgroup_vehicle_km_report",
+         
+            
+            
+            
+            
 
         ):
 
@@ -412,6 +424,152 @@ def execute_predefined_question(
         user
 
     )
+            elif function_name == "get_branchgroup_vehicle_km_report":
+
+                if isinstance(input_value, dict):
+                    vehicle_input = input_value.get("vehicle_input")
+                else:
+                    vehicle_input = input_value
+
+                result = engine_method(
+        user.get("groupId") or user.get("branchGroupId"),
+        vehicle_input,
+        role,
+        user
+    )
+            elif function_name == "get_branchgroup_specific_branch_vehicle_km_report":
+
+                if not isinstance(input_value, dict):
+                    return {
+            "success": False,
+            "message": "Branch name and vehicle name required."
+        }
+
+
+                branch_name = input_value.get("branch_name")
+
+                vehicle_input = input_value.get("vehicle_input")
+
+
+                if not branch_name or not vehicle_input:
+                    return {
+            "success": False,
+            "message": "Branch name and vehicle name required."
+        }
+
+
+                group_id = (
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id")
+    )
+
+
+                result = engine_method(
+        group_id,
+        branch_name,
+        vehicle_input,
+        role,
+        user
+    )
+            elif function_name == "get_branchgroup_vehicle_today_distance":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_branch_vehicle_today_distance":
+
+                if not isinstance(input_value, dict):
+                    return {
+            "success":False,
+            "message":"Please enter branch name and vehicle name."
+        }
+
+
+                branch_name = input_value.get("branch_name")
+
+                vehicle_input = input_value.get("vehicle_input")
+
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        branch_name,
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_branch":
+
+                result = engine_method(input_value.get("branch_name"),
+        role,
+        user
+    )
+            elif function_name == "get_branchgroup_school_vehicle_geofence":
+
+                print("INPUT VALUE =", input_value)
+
+    # vehicle input
+                if isinstance(input_value, dict):
+
+                            vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle")
+            or input_value.get("vehicle_name")
+        )
+
+                else:
+                        vehicle_input = input_value
+
+
+                if not vehicle_input:
+                    return {
+            "success": False,
+            "message": "Please enter vehicle name."
+        }
+
+
+                group_id = (
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id")
+    )
+
+
+                print("GROUP ID =", group_id)
+                print("VEHICLE =", vehicle_input)
+
+
+                result = engine_method(
+
+        group_id,
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
             elif function_name == "get_branchgroup_specific_branch_geofences":
 
                 branch_name = input_value.get(
@@ -448,12 +606,104 @@ def execute_predefined_question(
         role,
         user
     )
+            elif function_name == "get_assigned_school_branchgroup":
+
+                group_id = (
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id")
+    )
+
+                result = engine_method(
+        group_id,
+        role,
+        user
+    )
             elif function_name == "get_school_user_branch_geofences":
 
                 result = engine_method(
         role,
         user
     )  
+            elif function_name == "get_branchgroup_specific_branch_vehicle_geofence":
+
+                if isinstance(input_value, dict):
+
+                    branch_name = input_value.get(
+            "branch_name"
+        )
+
+                    vehicle_input = input_value.get(
+            "vehicle_input"
+        )
+
+                else:
+
+                    return {
+            "success": False,
+            "message": "Branch name and vehicle name required"
+        }
+
+
+                result = engine_method(
+
+        user.get("groupId"),
+
+        branch_name,
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_vehicle_geofence":
+
+                if isinstance(input_value, dict):
+                    vehicle_input = input_value.get("vehicle_input")
+                else:
+                    vehicle_input = input_value
+
+                result = engine_method(
+        user.get("groupId"),
+        vehicle_input
+    )
+            elif function_name == "get_branchgroup_specific_vehicle":
+
+                vehicle_input = input_value.get(
+        "vehicle_input"
+    )
+
+                result = engine_method(
+
+        user.get("groupId"),
+
+        vehicle_input
+
+    )
+            elif function_name == "get_branchgroup_specific_branch_vehicles":
+
+                branch_name = input_value.get(
+        "branch_name"
+    )
+
+                vehicle_input = input_value.get(
+        "vehicle_input"
+    )
+
+
+                result = engine_method(
+
+        branch_name,
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
             elif function_name == "get_specific_vehicle_branch_of_school_geofences":
 
                 if not isinstance(input_value, dict):

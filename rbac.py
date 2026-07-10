@@ -297,11 +297,18 @@ def get_rbac_filter(
             }
 
 
-            assigned_branches = branch_group.get(
-            "AssignedBranch",
-            []
-        )
+        #     assigned_branches = branch_group.get(
+        #     "AssignedBranch",
+        #     []
+        # )
+            assigned_branches = []
 
+            for b in branch_group.get("AssignedBranch", []):
+                assigned_branches.append(str(b))
+            try:
+                assigned_branches.append(ObjectId(str(b)))
+            except:
+                pass
 
             return {
 

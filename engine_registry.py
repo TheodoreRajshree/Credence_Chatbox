@@ -241,6 +241,32 @@ branch_group_engine.get_branchgroup_vehicle_today_distance,
     geofences_engine.get_specific_vehicle_branch_of_school_geofences,
     "get_branchgroup_specific_branch_geofences":
     branch_group_engine.get_branchgroup_specific_branch_geofences,
+    "get_branch_group_profile_only":
+    branch_group_engine.get_branch_group_profile_only,
+    "get_branchgroup_specific_branch":
+    branch_group_engine.get_branchgroup_specific_branch,
+    "get_assigned_school_branchgroup":
+    branch_group_engine.get_assigned_school_branchgroup,
+    "get_branchgroup_specific_branch_vehicles":
+    branch_group_engine.get_branchgroup_specific_branch_vehicles,
+    "get_branchgroup_school_vehicle":
+    branch_group_engine.get_branchgroup_school_vehicle,
+    "get_branchgroup_specific_vehicle":
+    branch_group_engine.get_branchgroup_specific_vehicle,
+    "get_branchgroup_specific_vehicle_geofence":
+    branch_group_engine.get_branchgroup_specific_vehicle_geofence,
+    "get_branchgroup_specific_branch_vehicle_geofence":
+    branch_group_engine.get_branchgroup_specific_branch_vehicle_geofence,
+    "get_branchgroup_school_vehicle_geofence":
+    branch_group_engine.get_branchgroup_school_vehicle_geofence,
+    "get_branchgroup_specific_branch_vehicle_today_distance":
+    branch_group_engine.get_branchgroup_specific_branch_vehicle_today_distance,
+    "get_branchgroup_vehicle_today_distance":
+branch_group_engine.get_branchgroup_vehicle_today_distance,
+"get_branchgroup_specific_branch_vehicle_km_report":
+    branch_group_engine.get_branchgroup_specific_branch_vehicle_km_report,
+     "get_branchgroup_vehicle_km_report":
+    branch_group_engine.get_branchgroup_vehicle_km_report,
 # =====================
 # BRANCH
 # =====================
