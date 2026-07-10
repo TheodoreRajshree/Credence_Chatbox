@@ -384,6 +384,11 @@ def execute_predefined_question(
             "get_branchgroup_specific_branch_vehicle_status",
             "get_branchgroup_specific_branch_vehicle_travel_summary",
             "get_branchgroup_specific_branch_vehicle_last_position",
+            "get_specific_branch_group_profile",
+            "get_specific_vehicle_last_position",
+            "get_specific_active_vehicle",
+            "get_specific_stopped_vehicle",
+           "get_specific_status_report",
          
             
             
@@ -428,6 +433,220 @@ def execute_predefined_question(
         user
 
     )
+            elif function_name == "get_specific_stopped_vehicle":
+
+                vehicle_input = None
+
+                if isinstance(input_value, dict):
+
+                    vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle_name")
+            or input_value.get("unique_id")
+        )
+
+                else:
+
+                    vehicle_input = input_value
+
+
+                result = engine_method(
+
+        role,
+
+        user,
+
+        vehicle_input
+
+    )
+            elif function_name == "get_specific_distance_report":
+
+                vehicle_input = None
+
+                if isinstance(input_value, dict):
+
+                    vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle_name")
+            or input_value.get("unique_id")
+        )
+
+                else:
+
+                    vehicle_input = input_value
+
+
+                result = engine_method(
+
+        role,
+
+        user,
+
+        vehicle_input
+
+    ) 
+            elif function_name == "get_specific_idle_report":
+
+                vehicle_input = None
+
+                if isinstance(input_value, dict):
+
+                    vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle_name")
+            or input_value.get("unique_id")
+        )
+
+                else:
+
+                    vehicle_input = input_value
+
+
+                    result = engine_method(
+
+        role,
+
+        user,
+
+        vehicle_input
+
+    )
+            elif function_name == "get_specific_travel_summary":
+
+                vehicle_input = None
+
+                if isinstance(input_value, dict):
+
+                    vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle_name")
+            or input_value.get("unique_id")
+        )
+
+                else:
+
+                    vehicle_input = input_value
+
+
+                result = engine_method(
+
+        role,
+
+        user,
+
+        vehicle_input
+
+    )
+            elif function_name == "get_specific_vehicle_geofences":
+
+                vehicle_input = None
+
+                if isinstance(input_value, dict):
+
+                    vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle_name")
+            or input_value.get("unique_id")
+        )
+
+                else:
+
+                    vehicle_input = input_value
+
+
+                result = engine_method(
+
+        role,
+
+        user,
+
+        vehicle_input
+
+    )
+            elif function_name == "get_specific_trip_report":
+
+                vehicle_input = None
+
+                if isinstance(input_value, dict):
+
+                    vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle_name")
+            or input_value.get("unique_id")
+        )
+
+                else:
+
+                    vehicle_input = input_value
+
+
+                result = engine_method(
+
+        role,
+
+        user,
+
+        vehicle_input
+
+    )
+            elif function_name == "get_specific_status_report":
+
+                vehicle_input = None
+
+                if isinstance(input_value, dict):
+
+                    vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle_name")
+            or input_value.get("unique_id")
+        )
+
+                else:
+
+                    vehicle_input = input_value
+
+
+                result = engine_method(
+
+        role,
+
+        user,
+
+        vehicle_input
+
+    )
+            elif function_name == "get_specific_branch_group_profile":
+
+                group_name = None
+
+                if isinstance(input_value, dict):
+
+                    group_name = input_value.get("group_name")
+
+                else:
+
+                    group_name = input_value
+
+
+                print("BRANCH GROUP INPUT =", group_name)
+
+
+                result = engine_method(
+        role,
+        user,
+        group_name
+    )
+            elif function_name == "get_specific_active_vehicle":
+
+                result = engine_method(
+
+        role,
+
+        user,
+
+        input_value
+
+    )
             elif function_name == "get_branchgroup_specific_branch_vehicle_status":
 
                 branch_name = input_value.get("branch_name")
@@ -445,6 +664,12 @@ def execute_predefined_question(
 
         user
 
+    )
+            elif function_name == "get_all_branch_groups_profile":
+
+                result = engine_method(
+        role=role,
+        user=user
     )
             elif function_name == "get_branchgroup_specific_branch_vehicle_last_position":
 

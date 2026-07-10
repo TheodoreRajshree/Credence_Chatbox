@@ -2,12 +2,12 @@ QUESTIONS = {
 
 "superadmin":[
 
-{
-"id":101,
-"question":"Show all vehicles",
-"intent":"devices",
-"function":"get_all_devices"
-},
+# {
+# "id":101,
+# "question":"Show all vehicles",
+# "intent":"devices",
+# "function":"get_all_devices"
+# },
 
 
 {
@@ -26,45 +26,62 @@ QUESTIONS = {
         ]
       },
       
-{
-  "id": 3339,
-  "question": "Show vehicle geofence by school, branch or route",
-  "intent": "devices",
-  "function": "get_device_geofence_superadmin",
-  "fields": [
-    {
-      "name": "location_name",
-      "type": "text",
-      "label": "Enter School, Branch or Route Name",
-      "placeholder": "Example: Anandwadi"
-    },
-    {
-      "name": "vehicle_name",
-      "type": "text",
-      "label": "Enter Vehicle Name",
-      "placeholder": "Example: MH31FC7874"
-    }
-  ]
-},
-{
-    "id": 400,
-    "question": "Show Schools",
-    "intent": "schools",
+# {
+#   "id": 3339,
+#   "question": "Show vehicle geofence by school, branch or route",
+#   "intent": "devices",
+#   "function": "get_device_geofence_superadmin",
+#   "fields": [
+#     {
+#       "name": "location_name",
+#       "type": "text",
+#       "label": "Enter School, Branch or Route Name",
+#       "placeholder": "Example: Anandwadi"
+#     },
+#     {
+#       "name": "vehicle_name",
+#       "type": "text",
+#       "label": "Enter Vehicle Name",
+#       "placeholder": "Example: MH31FC7874"
+#     }
+#   ]
+# },
+# {
+#     "id": 400,
+#     "question": "Show Schools",
+#     "intent": "schools",
     
-    "function": "find_school_superadmin",
-},
-{
-    "id": 4000,
-    "question": "Show branch",
-    "intent": "schools",
+#     "function": "find_school_superadmin",
+# },
+# {
+#     "id": 4000,
+#     "question": "Show branch",
+#     "intent": "schools",
     
-    "function": "find_branch_superadmin",
+#     "function": "find_branch_superadmin",
+# },
+{
+  "id": 12293,
+  "question": "Show all branch groups",
+  "intent": "all_branchgroup_profile",
+  "function": "get_all_branch_groups_profile"
 },
-
-
+# {
+#   "id": 122011005,
+#   "question": "Specific Branch Group Profile",
+#   "intent": "specific_branchgroup_profile",
+#   "function": "get_specific_branch_group_profile",
+#   "fields": [
+#     {
+#       "name": "group_name",
+#       "label": "Enter Branch Group Name",
+#       "placeholder": "Mumbai Group"
+#     }
+#   ]
+# },
 {
         "id": 3113,
-        "question":"Show specific branch ",
+        "question":"Show Branch ",
       
         "intent": "school",
         "function": "find_specific_branch_superadmin",
@@ -79,7 +96,7 @@ QUESTIONS = {
       },
 {
         "id": 3112,
-        "question":"Show specific school ",
+        "question":"Show School ",
       
         "intent": "school",
         "function": "find_specific_school_superadmin",
@@ -107,70 +124,169 @@ QUESTIONS = {
           }
         ]
       },
+# {
+# "id":104,
+# "question":"Show all vehicle locations",
+# "intent":"vehiclelastpositions",
+# "function":"get_all_last_positions"
+# },
 {
-"id":104,
-"question":"Show all vehicle locations",
-"intent":"vehiclelastpositions",
-"function":"get_all_last_positions"
+  "id": 12209007,
+  "question": "Show specific vehicle last position",
+  "intent": "specific_vehicle_last_position",
+  "function": "get_specific_vehicle_last_position",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+}
+,
+# {
+# "id":105,
+# "question":"Show active vehicles",
+# "intent":"vehiclelastpositions",
+# "function":"get_active_vehicles"
+# },
+{
+  "id": 12208008,
+  "question": "Show specific active vehicle",
+  "intent": "specific_active_vehicle",
+  "function": "get_specific_active_vehicle",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
 },
 
+# {
+# "id":106,
+# "question":"Show stopped vehicles",
+# "intent":"vehiclelastpositions",
+# "function":"get_stopped_vehicles"
+# },
 {
-"id":105,
-"question":"Show active vehicles",
-"intent":"vehiclelastpositions",
-"function":"get_active_vehicles"
+  "id": 122082009,
+  "question": "Show specific stopped vehicle",
+  "intent": "specific_stopped_vehicle",
+  "function": "get_specific_stopped_vehicle",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
 },
+# {
+# "id":107,
+# "question":"Vehicle status report",
+# "intent":"report_status",
+# "function":"get_all_status_reports"
+# },
+{
+  "id": 1220822010,
+  "question": "Show specific vehicle status report",
+  "intent": "specific_vehicle_status_report",
+  "function": "get_specific_status_report",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+},
+# {
+# "id":108,
+# "question":"Distance report",
+# "intent":"distance",
+# "function":"get_all_distance_reports"
+# },
+{
+  "id": 122085011,
+  "question": "Show specific vehicle distance report",
+  "intent": "specific_vehicle_distance_report",
+  "function": "get_specific_distance_report",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+},
+# {
+# "id":109,
+# "question":"Trip report",
+# "intent":"trips",
+# "function":"get_all_trips"
+# },
+{
+  "id": 120208012,
+  "question": "Show specific vehicle trip report",
+  "intent": "specific_vehicle_trip_report",
+  "function": "get_specific_trip_report",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+},
+# {
+# "id":110,
+# "question":"Idle report",
+# "intent":"idle",
+# "function":"get_all_idle_reports"
+# },
+{
+  "id": 122208013,
+  "question": "Show specific vehicle idle report",
+  "intent": "specific_vehicle_idle_report",
+  "function": "get_specific_idle_report",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+}
+,
+# {
+# "id":1230,
+# "question":"Stoppage report",
+# "intent":"stoppage",
+# "function":"get_all_stoppage_reports"
+# },
+
+# {
+# "id":1220,
+# "question":"Travel summary report",
+# "intent":"travel_summary",
+# "function":"get_all_travel_summaries"
+# },
 
 {
-"id":106,
-"question":"Show stopped vehicles",
-"intent":"vehiclelastpositions",
-"function":"get_stopped_vehicles"
+  "id": 122080134,
+  "question": "Show specific vehicle travel summary",
+  "intent": "specific_vehicle_travel_summary",
+  "function": "get_specific_travel_summary",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
 },
-
-{
-"id":107,
-"question":"Vehicle status report",
-"intent":"report_status",
-"function":"get_all_status_reports"
-},
-
-{
-"id":108,
-"question":"Distance report",
-"intent":"distance",
-"function":"get_all_distance_reports"
-},
-
-{
-"id":109,
-"question":"Trip report",
-"intent":"trips",
-"function":"get_all_trips"
-},
-
-{
-"id":110,
-"question":"Idle report",
-"intent":"idle",
-"function":"get_all_idle_reports"
-},
-
-{
-"id":1230,
-"question":"Stoppage report",
-"intent":"stoppage",
-"function":"get_all_stoppage_reports"
-},
-
-{
-"id":1220,
-"question":"Travel summary report",
-"intent":"travel_summary",
-"function":"get_all_travel_summaries"
-},
-
-
 
 
 
@@ -181,13 +297,25 @@ QUESTIONS = {
 "function":"get_route_count"
 },
 
+# {
+# "id":1620,
+# "question":"Show all geofences",
+# "intent":"geofences",
+# "function":"get_all_geofences"
+# },
 {
-"id":1620,
-"question":"Show all geofences",
-"intent":"geofences",
-"function":"get_all_geofences"
+  "id": 122086015,
+  "question": "Show specific vehicle geofences",
+  "intent": "specific_vehicle_geofences",
+  "function": "get_specific_vehicle_geofences",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
 },
-
 {
 "id":1720,
 "question":"Show geofence reports",

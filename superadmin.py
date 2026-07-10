@@ -54,3 +54,112 @@ def find_school(self, school_name, role, user):
         })
 
     return school
+def get_all_branch_groups_profile_1(
+    self,
+    role,
+    user
+):
+
+    # ====================================
+    # STEP 1: SUPERADMIN ACCESS CHECK
+    # ====================================
+
+        if role != "superadmin":
+            return {
+            "success": False,
+            "message": "Access denied"
+        }
+
+
+    # ====================================
+    # STEP 2: FETCH ALL BRANCH GROUPS
+    # ====================================
+
+        groups = list(
+        self.db["branchgroups"].find({})
+    )
+
+
+        if not groups:
+            return {
+            "success": False,
+            "message": "No branch groups found"
+        }
+
+
+    # ====================================
+    # STEP 3: FORMAT RESPONSE
+    # ====================================
+
+        profiles = []
+
+
+        for group in groups:
+
+            profiles.append({
+
+            "groupId":
+                str(group["_id"]),
+
+
+            "branchGroupName":
+                group.get("branchGroupName"),
+
+
+            "schoolId":
+                str(group.get("schoolId"))
+                if group.get("schoolId")
+                else None,
+
+
+            "mobileNo":
+                group.get("mobileNo"),
+
+
+            "username":
+                group.get("username"),
+
+
+            "email":
+                group.get("email"),
+
+
+            "role":
+                group.get("role"),
+
+
+            "active":
+                group.get("Active"),
+
+
+            "access":
+                group.get("access"),
+
+
+            "notification":
+                group.get("Notification"),
+
+
+            "fcmToken":
+                group.get("fcmToken"),
+
+
+            "createdAt":
+                group.get("createdAt")
+
+        })
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "count": len(profiles),
+
+        "profiles": profiles
+
+    }

@@ -940,7 +940,7 @@ class SchoolEngine:
 
         "speed": device.get("speed"),
 
-        "totalKm": device.get("TotalKmOfDevice", 0)
+        # "totalKm": device.get("TotalKmOfDevice", 0)
 
     }
 

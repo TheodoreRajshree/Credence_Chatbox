@@ -1,5 +1,6 @@
 from rbac import get_rbac_filter
 import requests
+import re
 from geopy.geocoders import Nominatim
 class VehicleLastPositionEngine:
 
@@ -209,9 +210,6 @@ class VehicleLastPositionEngine:
             for v in vehicles
 
         ]
-
-
-
     # ====================================
     # ACTIVE VEHICLES
     # ====================================
@@ -483,3 +481,141 @@ class VehicleLastPositionEngine:
             )
 
         }
+    def get_specific_vehicle_last_position(
+    self,
+    role,
+    user,
+    vehicle_input=None
+):
+
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+
+    # ====================================
+    # STEP 2: POSITION FILTER
+    # ====================================
+
+        base_filter = self.get_position_filter(
+
+        role,
+
+        user
+
+    )
+
+
+
+    # ====================================
+    # STEP 3: VEHICLE SEARCH
+    # ====================================
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        query = {
+
+        "$and": [
+
+            base_filter,
+
+            {
+
+                "$or": [
+
+                    {
+                        "name": regex
+                    },
+
+                    {
+                        "uniqueId": regex
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    }
+
+
+
+        vehicle = self.db["vehiclelastpositions"].find_one(
+
+        query
+
+    )
+
+
+
+        if not vehicle:
+
+            return {
+
+            "success": False,
+
+            "message": "Vehicle not found"
+
+        }
+
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "vehicle": {
+
+            "vehicleName":
+                vehicle.get("name"),
+
+
+            "uniqueId":
+                vehicle.get("uniqueId"),
+
+
+            "latitude":
+                vehicle.get("latitude"),
+
+
+            "longitude":
+                vehicle.get("longitude"),
+
+
+            "speed":
+                vehicle.get("speed"),
+
+
+            "lastUpdate":
+                vehicle.get("lastUpdate")
+
+        }
+
+    }

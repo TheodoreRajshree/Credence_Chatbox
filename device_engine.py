@@ -1,6 +1,6 @@
 from bson import ObjectId
 from rbac import get_rbac_filter
-
+import re
 from unique_id import normalize_unique_id
 class DeviceEngine:
 
@@ -49,7 +49,7 @@ class DeviceEngine:
             "status": device.get("status"),
             "speed": device.get("speed"),
             "average": device.get("average"),
-            "totalKm": device.get("TotalKmOfDevice"),
+            # "totalKm": device.get("TotalKmOfDevice"),
             "installationDate": device.get("installationdate"),
             "expirationDate": device.get("expirationdate"),
             "schoolId": str(device.get("schoolId"))
@@ -88,7 +88,7 @@ class DeviceEngine:
                 "status": device.get("status"),
                 "speed": device.get("speed"),
                 "average": device.get("average"),
-                "totalKm": device.get("TotalKmOfDevice"),
+                # "totalKm": device.get("TotalKmOfDevice"),
                 "installationDate": device.get("installationdate"),
                 "expirationDate": device.get("expirationdate"),
                 "schoolId": str(device.get("schoolId")) if device.get("schoolId") else None,
@@ -331,7 +331,7 @@ class DeviceEngine:
         "model": device.get("model"),
         "category": device.get("category"),
         "speed": device.get("speed"),
-        "totalKm": device.get("TotalKmOfDevice", 0)
+        
     }
 
         return {
@@ -406,3 +406,1639 @@ class DeviceEngine:
             "trip": trip,
             "idle": idle
         }
+    
+    def get_all_branch_groups_profile(
+    self,
+    role,
+    user
+):
+
+    # ====================================
+    # STEP 1: SUPERADMIN ACCESS CHECK
+    # ====================================
+
+            if role != "superadmin":
+                return {
+            "success": False,
+            "message": "Access denied"
+        }
+
+
+    # ====================================
+    # STEP 2: FETCH ALL BRANCH GROUPS
+    # ====================================
+
+            groups = list(
+            self.db["branchgroups"].find({})
+    )
+
+
+            if not groups:
+                return {
+            "success": False,
+            "message": "No branch groups found"
+        }
+
+
+    # ====================================
+    # STEP 3: FORMAT RESPONSE
+    # ====================================
+
+            profiles = []
+
+
+            for group in groups:
+
+                profiles.append({
+
+            "groupId":
+                str(group["_id"]),
+
+
+            "branchGroupName":
+                group.get("branchGroupName"),
+
+
+            "schoolId":
+                str(group.get("schoolId"))
+                if group.get("schoolId")
+                else None,
+
+
+            "mobileNo":
+                group.get("mobileNo"),
+
+
+            "username":
+                group.get("username"),
+
+
+            "email":
+                group.get("email"),
+
+
+            "role":
+                group.get("role"),
+
+
+            "active":
+                group.get("Active"),
+
+
+            "access":
+                group.get("access"),
+
+
+            "notification":
+                group.get("Notification"),
+
+
+            "fcmToken":
+                group.get("fcmToken"),
+
+
+            "createdAt":
+                group.get("createdAt")
+
+        })
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+            return {
+
+        "success": True,
+
+        "count": len(profiles),
+
+        "profiles": profiles
+
+    }
+    
+    def get_specific_branch_group_profile(
+    self,
+    role,
+    user,
+    input_value=None
+):
+
+    # ====================================
+    # STEP 1: GET BRANCH GROUP NAME INPUT
+    # ====================================
+
+        if isinstance(input_value, dict):
+
+            group_name = (
+            input_value.get("group_name")
+            or input_value.get("branchGroupName")
+            or ""
+        )
+
+        else:
+
+            group_name = input_value or ""
+
+
+        group_name = str(group_name).strip()
+
+
+        print("========== SPECIFIC BRANCH GROUP DEBUG ==========")
+        print("GROUP SEARCH =", group_name)
+        print("ROLE =", role)
+        print("USER =", user)
+        print("=================================================")
+
+
+        if not group_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter branch group name"
+
+        }
+
+
+
+    # ====================================
+    # STEP 2: ROLE HANDLING
+    # ====================================
+
+        if isinstance(role, dict):
+
+            role_name = role.get("role", "")
+
+        else:
+
+            role_name = role
+
+
+
+    # ====================================
+    # STEP 3: RBAC FILTER
+    # ====================================
+
+        if role_name.lower() == "superadmin":
+
+            base_filter = {}
+
+        else:
+
+            base_filter = get_rbac_filter(
+            role_name,
+            user,
+            "branchgroups",
+            self.db
+        ) or {}
+
+
+
+        branchgroup = None
+
+
+
+    # ====================================
+    # STEP 4: OBJECT ID SEARCH
+    # ====================================
+
+        if ObjectId.is_valid(group_name):
+
+            branchgroup = self.db["branchgroups"].find_one({
+
+            "$and": [
+
+                base_filter,
+
+                {
+                    "_id": ObjectId(group_name)
+                }
+
+            ]
+
+        })
+
+
+
+    # ====================================
+    # STEP 5: NAME / USERNAME SEARCH
+    # ====================================
+
+        if not branchgroup:
+
+            regex = re.compile(
+            re.escape(group_name),
+            re.IGNORECASE
+        )
+
+
+            branchgroup = self.db["branchgroups"].find_one({
+
+            "$and": [
+
+                base_filter,
+
+                {
+
+                    "$or": [
+
+                        {
+                            "branchGroupName": regex
+                        },
+
+                        {
+                            "username": regex
+                        }
+
+                    ]
+
+                }
+
+            ]
+
+        })
+
+
+
+    # ====================================
+    # STEP 6: NOT FOUND
+    # ====================================
+
+        if not branchgroup:
+
+            return {
+
+            "success": False,
+
+            "message": "Branch group not found"
+
+        }
+
+
+
+    # ====================================
+    # STEP 7: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "profile": {
+
+            "groupId":
+                str(branchgroup["_id"]),
+
+
+            "branchGroupName":
+                branchgroup.get(
+                    "branchGroupName"
+                ),
+
+
+            "schoolId":
+                str(branchgroup.get("schoolId"))
+                if branchgroup.get("schoolId")
+                else None,
+
+
+            "username":
+                branchgroup.get(
+                    "username"
+                ),
+
+
+            "mobileNo":
+                branchgroup.get(
+                    "mobileNo"
+                ),
+
+
+            "email":
+                branchgroup.get(
+                    "email"
+                ),
+
+
+            "role":
+                branchgroup.get(
+                    "role"
+                ),
+
+
+            "active":
+                branchgroup.get(
+                    "Active"
+                ),
+
+
+            "access":
+                branchgroup.get(
+                    "access"
+                ),
+
+
+            "notification":
+                branchgroup.get(
+                    "Notification"
+                ),
+
+
+            "createdAt":
+                branchgroup.get(
+                    "createdAt"
+                )
+
+        }
+
+    }
+    
+    def get_specific_vehicle_last_position(
+    self,
+    role,
+    user,
+    vehicle_input=None
+):
+
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+
+    # ====================================
+    # STEP 2: POSITION FILTER
+    # ====================================
+
+        base_filter = self.get_position_filter(
+
+        role,
+
+        user
+
+    )
+
+
+
+    # ====================================
+    # STEP 3: VEHICLE SEARCH
+    # ====================================
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        query = {
+
+        "$and": [
+
+            base_filter,
+
+            {
+
+                "$or": [
+
+                    {
+                        "name": regex
+                    },
+
+                    {
+                        "uniqueId": regex
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    }
+
+
+
+        vehicle = self.db["vehiclelastpositions"].find_one(
+
+        query
+
+    )
+
+
+
+        if not vehicle:
+
+            return {
+
+            "success": False,
+
+            "message": "Vehicle not found"
+
+        }
+
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "vehicle": {
+
+            "vehicleName":
+                vehicle.get("name"),
+
+
+            "uniqueId":
+                vehicle.get("uniqueId"),
+
+
+            "latitude":
+                vehicle.get("latitude"),
+
+
+            "longitude":
+                vehicle.get("longitude"),
+
+
+            "speed":
+                vehicle.get("speed"),
+
+
+            "lastUpdate":
+                vehicle.get("lastUpdate")
+
+        }
+
+    }
+    def get_specific_active_vehicle(
+    self,
+    role,
+    user,
+    vehicle_input=None
+):
+
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+
+    # ====================================
+    # STEP 2: SEARCH VEHICLE
+    # ====================================
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        vehicles = list(
+
+        self.db["vehiclelastpositions"].find({
+
+            "$and": [
+
+                self.get_position_filter(
+
+                    role,
+
+                    user
+
+                ),
+
+                {
+
+                    "speed": {
+
+                        "$gt": 0
+
+                    }
+
+                },
+
+                {
+
+                    "$or": [
+
+                        {
+
+                            "name": regex
+
+                        },
+
+                        {
+
+                            "uniqueId": regex
+
+                        }
+
+                    ]
+
+                }
+
+            ]
+
+        })
+
+    )
+
+
+
+        if not vehicles:
+
+            return {
+
+            "success": False,
+
+            "message": "Active vehicle not found"
+
+        }
+
+
+
+    # ====================================
+    # STEP 3: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "vehicles": [
+
+            {
+
+                "vehicleName":
+                    v.get("name"),
+
+
+                "uniqueId":
+                    v.get("uniqueId"),
+
+
+                "speed":
+                    v.get("speed"),
+
+
+                "latitude":
+                    v.get("latitude"),
+
+
+                "longitude":
+                    v.get("longitude")
+
+            }
+
+                for v in vehicles
+
+        ]
+
+    }
+    def get_position_filter(
+        self,
+        role,
+        user
+    ):
+
+        return get_rbac_filter(
+
+            role,
+
+            user,
+
+            "vehiclelastpositions",
+
+            self.db
+
+        )
+    def get_specific_stopped_vehicle(
+    self,
+    role,
+    user,
+    vehicle_input=None
+):
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+    # ====================================
+    # STEP 2: SEARCH VEHICLE
+    # ====================================
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        vehicle = self.db["vehiclelastpositions"].find_one({
+
+        "$and": [
+
+            self.get_position_filter(
+
+                role,
+
+                user
+
+            ),
+
+            {
+
+                "speed": 0
+
+            },
+
+            {
+
+                "$or": [
+
+                    {
+
+                        "name": regex
+
+                    },
+
+                    {
+
+                        "uniqueId": regex
+
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    })
+
+
+        if not vehicle:
+
+            return {
+
+            "success": False,
+
+            "message": "Stopped vehicle not found"
+
+        }
+
+
+    # ====================================
+    # STEP 3: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "vehicle": {
+
+            "vehicleName":
+                vehicle.get("name"),
+
+            "uniqueId":
+                vehicle.get("uniqueId"),
+
+            "latitude":
+                vehicle.get("latitude"),
+
+            "longitude":
+                vehicle.get("longitude"),
+
+            "lastUpdate":
+                vehicle.get("lastUpdate"),
+
+            "speed":
+                vehicle.get("speed")
+
+        }
+
+    }
+    def get_specific_status_report(
+    self,
+    role,
+    user,
+    vehicle_input=None,
+    limit=200
+):
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+    # ====================================
+    # STEP 2: RBAC FILTER
+    # ====================================
+
+        status_filter = get_rbac_filter(
+
+        role,
+
+        user,
+
+        "report_statuses",
+
+        self.db
+
+    )
+
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        query = {
+
+        "$and": [
+
+            status_filter,
+
+            {
+
+                "$or": [
+
+                    {
+
+                        "vehicleName": regex
+
+                    },
+
+                    {
+
+                        "name": regex
+
+                    },
+
+                    {
+
+                        "uniqueId": regex
+
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    }
+
+
+    # ====================================
+    # STEP 3: FETCH REPORT
+    # ====================================
+
+        reports = list(
+
+        self.db["report_statuses"]
+
+        .find(query)
+
+        .sort(
+
+            "startDateTime",
+
+            -1
+
+        )
+
+        .limit(limit)
+
+    )
+
+
+        if not reports:
+
+            return {
+
+            "success": False,
+
+            "message": "No status report found"
+
+        }
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "reports": [
+
+            self.clean(r)
+
+            for r in reports
+
+        ]
+
+    }
+    def clean(self, doc):
+
+        if not doc:
+            return doc
+
+        result = {}
+
+        for k, v in doc.items():
+
+            if isinstance(v, ObjectId):
+                result[k] = str(v)
+
+            else:
+                result[k] = v
+
+        return result
+    def get_specific_distance_report(
+    self,
+    role,
+    user,
+    vehicle_input=None,
+    limit=200
+):
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+    # ====================================
+    # STEP 2: RBAC FILTER
+    # ====================================
+
+        report_filter = get_rbac_filter(
+
+        role,
+
+        user,
+
+        "report_distances",
+
+        self.db
+
+    )
+
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        query = {
+
+        "$and": [
+
+            report_filter,
+
+            {
+
+                "$or": [
+
+                    {
+
+                        "vehicleName": regex
+
+                    },
+
+                    {
+
+                        "name": regex
+
+                    },
+
+                    {
+
+                        "uniqueId": regex
+
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    }
+
+
+    # ====================================
+    # STEP 3: FETCH REPORTS
+    # ====================================
+
+        reports = list(
+
+        self.db["report_distances"]
+
+        .find(query)
+
+        .sort(
+
+            "createdAt",
+
+            -1
+
+        )
+
+        .limit(limit)
+
+    )
+
+
+        if not reports:
+
+            return {
+
+            "success": False,
+
+            "message": "No distance report found"
+
+        }
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "reports": [
+
+            self.clean(report)
+
+            for report in reports
+
+        ]
+
+    }
+    def get_specific_trip_report(
+    self,
+    role,
+    user,
+    vehicle_input=None,
+    limit=200
+):
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+    # ====================================
+    # STEP 2: RBAC FILTER
+    # ====================================
+
+        trip_filter = get_rbac_filter(
+
+        role,
+
+        user,
+
+        "report_trips",
+
+        self.db
+
+    )
+
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        query = {
+
+        "$and": [
+
+            trip_filter,
+
+            {
+
+                "$or": [
+
+                    {
+
+                        "vehicleName": regex
+
+                    },
+
+                    {
+
+                        "name": regex
+
+                    },
+
+                    {
+
+                        "uniqueId": regex
+
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    }
+
+
+    # ====================================
+    # STEP 3: FETCH REPORTS
+    # ====================================
+
+        reports = list(
+
+        self.db["report_trips"]
+
+        .find(query)
+
+        .sort(
+
+            "startTime",
+
+            -1
+
+        )
+
+        .limit(limit)
+
+    )
+
+
+        if not reports:
+
+            return {
+
+            "success": False,
+
+            "message": "No trip report found"
+
+        }
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "reports": [
+
+            self.clean(report)
+
+            for report in reports
+
+        ]
+
+    }
+    def get_specific_idle_report(
+    self,
+    role,
+    user,
+    vehicle_input=None,
+    limit=200
+):
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+    # ====================================
+    # STEP 2: RBAC FILTER
+    # ====================================
+
+        idle_filter = get_rbac_filter(
+
+        role,
+
+        user,
+
+        "report_idles",
+
+        self.db
+
+    )
+
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        query = {
+
+        "$and": [
+
+            idle_filter,
+
+            {
+
+                "$or": [
+
+                    {
+
+                        "vehicleName": regex
+
+                    },
+
+                    {
+
+                        "name": regex
+
+                    },
+
+                    {
+
+                        "uniqueId": regex
+
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    }
+
+
+    # ====================================
+    # STEP 3: FETCH REPORTS
+    # ====================================
+
+        reports = list(
+
+        self.db["report_idles"]
+
+        .find(query)
+
+        .sort(
+
+            "idleStartTime",
+
+            -1
+
+        )
+
+        .limit(limit)
+
+    )
+
+
+        if not reports:
+
+            return {
+
+            "success": False,
+
+            "message": "No idle report found"
+
+        }
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "reports": [
+
+            self.clean(report)
+
+            for report in reports
+
+        ]
+
+    }
+    def get_specific_travel_summary(
+    self,
+    role,
+    user,
+    vehicle_input=None,
+    limit=200
+):
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+    # ====================================
+    # STEP 2: RBAC FILTER
+    # ====================================
+
+        summary_filter = get_rbac_filter(
+
+        role,
+
+        user,
+
+        "report_travelsummaries",
+
+        self.db
+
+    )
+
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        query = {
+
+        "$and": [
+
+            summary_filter,
+
+            {
+
+                "$or": [
+
+                    {
+
+                        "vehicleName": regex
+
+                    },
+
+                    {
+
+                        "name": regex
+
+                    },
+
+                    {
+
+                        "uniqueId": regex
+
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    }
+
+
+    # ====================================
+    # STEP 3: FETCH REPORTS
+    # ====================================
+
+        reports = list(
+
+        self.db["report_travelsummaries"]
+
+        .find(query)
+
+        .sort(
+
+            "startTime",
+
+            -1
+
+        )
+
+        .limit(limit)
+
+    )
+
+
+        if not reports:
+
+            return {
+
+            "success": False,
+
+            "message": "No travel summary found"
+
+        }
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "reports": [
+
+            self.clean(report)
+
+            for report in reports
+
+        ]
+
+    }
+    def get_specific_vehicle_geofences(
+    self,
+    role,
+    user,
+    vehicle_input=None,
+    limit=200
+):
+
+    # ====================================
+    # STEP 1: VEHICLE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+
+        if not vehicle_name:
+
+            return {
+
+            "success": False,
+
+            "message": "Please enter vehicle name or unique ID"
+
+        }
+
+
+    # ====================================
+    # STEP 2: RBAC FILTER
+    # ====================================
+
+        rbac_filter = self.get_filter(
+
+        role,
+
+        user
+
+    )
+
+
+        regex = re.compile(
+
+        re.escape(vehicle_name),
+
+        re.IGNORECASE
+
+    )
+
+
+        query = {
+
+        "$and": [
+
+            rbac_filter,
+
+            {
+
+                "$or": [
+
+                    {
+
+                        "vehicleName": regex
+
+                    },
+
+                    {
+
+                        "name": regex
+
+                    },
+
+                    {
+
+                        "uniqueId": regex
+
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    }
+
+
+    # ====================================
+    # STEP 3: FETCH GEOFENCES
+    # ====================================
+
+        geofences = list(
+
+        self.db["geofences"]
+
+        .find(query)
+
+        .sort(
+
+            "createdAt",
+
+            -1
+
+        )
+
+        .limit(limit)
+
+    )
+
+
+        if not geofences:
+
+            return {
+
+            "success": False,
+
+            "message": "No geofence found for this vehicle"
+
+        }
+
+
+    # ====================================
+    # STEP 4: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "geofences": [
+
+            self.clean(g)
+
+            for g in geofences
+
+        ]
+
+    }
+    
+    def get_filter(
+        self,
+        role,
+        user
+    ):
+
+        return get_rbac_filter(
+            role,
+            user,
+            "geofences",
+            self.db
+        )
+
+

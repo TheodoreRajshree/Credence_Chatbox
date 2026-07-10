@@ -277,6 +277,12 @@ branch_group_engine.get_branchgroup_specific_branch_vehicles_g,
     branch_group_engine.get_branchgroup_specific_branch_vehicle_distance_report,
     "get_branchgroup_specific_branch_vehicle_last_position":
     branch_group_engine.get_branchgroup_specific_branch_vehicle_last_position,
+    "get_all_branch_groups_profile":
+    device_engine.get_all_branch_groups_profile,
+    "get_specific_branch_group_profile":
+    device_engine.get_specific_branch_group_profile,
+    "get_specific_vehicle_last_position":
+    device_engine.get_specific_vehicle_last_position,
 # =====================
 # BRANCH
 # =====================
@@ -1124,18 +1130,29 @@ geofence_report_engine.get_school_geofence_reports,
 
 "get_active_vehicles":
     vehicle_last_position_engine.get_active_vehicles,
-
-
+"get_specific_active_vehicle":
+    device_engine.get_specific_active_vehicle,
+"get_specific_stopped_vehicle":
+    device_engine.get_specific_stopped_vehicle,
 "get_stopped_vehicles":
     vehicle_last_position_engine.get_stopped_vehicles,
-
+"get_specific_status_report":
+    device_engine.get_specific_status_report,
 
 "get_total_vehicle_count":
     vehicle_last_position_engine.get_total_vehicle_count,
-
-
+"get_specific_distance_report":
+    device_engine.get_specific_distance_report,
+"get_specific_trip_report":
+    device_engine.get_specific_trip_report,
 "get_active_vehicle_count":
     vehicle_last_position_engine.get_active_vehicle_count,
+    "get_specific_idle_report":
+    device_engine.get_specific_idle_report,
+    "get_specific_travel_summary":
+    device_engine.get_specific_travel_summary,
+    "get_specific_vehicle_geofences":
+    device_engine.get_specific_vehicle_geofences,
 
 
 "get_stopped_vehicle_count":
