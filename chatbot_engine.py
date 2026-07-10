@@ -380,6 +380,10 @@ def execute_predefined_question(
             "get_branchgroup_specific_branch_vehicle_today_distance",
             "get_branchgroup_specific_branch_vehicle_km_report",
             "get_branchgroup_vehicle_km_report",
+            "get_branchgroup_specific_branch_vehicle_distance_report",
+            "get_branchgroup_specific_branch_vehicle_status",
+            "get_branchgroup_specific_branch_vehicle_travel_summary",
+            "get_branchgroup_specific_branch_vehicle_last_position",
          
             
             
@@ -423,6 +427,71 @@ def execute_predefined_question(
         role,
         user
 
+    )
+            elif function_name == "get_branchgroup_specific_branch_vehicle_status":
+
+                branch_name = input_value.get("branch_name")
+
+                vehicle_input = input_value.get("vehicle_input")
+
+
+                result = engine_method(
+
+        branch_name,
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_branch_vehicle_last_position":
+
+                branch_name = input_value.get("branch_name")
+
+                vehicle_input = input_value.get("vehicle_input")
+
+
+                result = engine_method(
+
+        branch_name,
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_branch_vehicle_travel_summary":
+
+                branch_name = input_value.get("branch_name")
+
+                vehicle_input = input_value.get("vehicle_input")
+
+
+                result = engine_method(
+
+        branch_name,
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_branch_vehicle_distance_report":
+
+                branch_name = input_value.get("branch_name")
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+        branch_name,
+        vehicle_input,
+        role,
+        user
     )
             elif function_name == "get_branchgroup_vehicle_km_report":
 

@@ -1,11 +1,55 @@
 from bson import ObjectId
 from rbac import get_rbac_filter
 from datetime import datetime, timezone, timedelta
-
+from report_status_engine import ReportStatusEngine
+from branch_engine import BranchEngine
+from device_engine import DeviceEngine
+from vehicle_km_engine import VehicleKmEngine
+from report_status_engine import ReportStatusEngine
 class BranchGroupEngine:
 
     def __init__(self, db):
         self.db = db
+        self.report_status_engine =ReportStatusEngine(db)
+       
+        self.vehicle_km_engine = VehicleKmEngine(db)
+    def get_address(self, latitude, longitude):
+
+        try:
+
+            location = self.geolocator.reverse(
+            f"{latitude}, {longitude}",
+            language="en",
+            exactly_one=True,
+            timeout=10
+        )
+
+            if location:
+                return location.address
+
+        except Exception as e:
+
+            print("Reverse Geocoding Error:", e)
+
+        return "Address Not Available"
+    def get_position_filter(
+        self,
+        role,
+        user
+    ):
+
+        return get_rbac_filter(
+
+            role,
+
+            user,
+
+            "vehiclelastpositions",
+
+            self.db
+
+        )
+
 
     def normalize_unique_id(self, uid):
 
@@ -28,6 +72,31 @@ class BranchGroupEngine:
             pass
 
         return list(set(ids))
+    # def normalize_unique_id(self, uid):
+
+    # ids = []
+
+    # if uid is None:
+    #     return ids
+
+
+    # ids.append(uid)
+    # ids.append(str(uid))
+
+
+    # try:
+    #     ids.append(int(float(uid)))
+    # except:
+    #     pass
+
+
+    # try:
+    #     ids.append(float(uid))
+    # except:
+    #     pass
+
+
+    # return list(set(ids))
     # ====================================
     # CONVERT ID
     # ====================================
@@ -6822,5 +6891,908 @@ class BranchGroupEngine:
             "success": False,
 
             "error": str(e)
+
+        }
+    
+    def get_branchgroup_specific_branch_vehicles_g(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user
+):
+
+        try:
+
+            branch_name = str(branch_name).strip()
+            vehicle_input = str(vehicle_input).strip()
+
+
+            if not branch_name or not vehicle_input:
+                return {
+                "success": False,
+                "message": "Branch name and vehicle name required"
+            }
+
+
+        # ===============================
+        # GROUP ID
+        # ===============================
+
+            group_id = (
+            user.get("groupId")
+            or user.get("branchGroupId")
+            or user.get("_id")
+        )
+
+
+            try:
+                group_id = ObjectId(str(group_id))
+            except:
+                pass
+
+
+
+        # ===============================
+        # FIND GROUP
+        # ===============================
+
+            branch_group = self.db["branchgroups"].find_one(
+            {
+                "_id": group_id
+            }
+        )
+
+
+            if not branch_group:
+
+                return {
+                "success":False,
+                "message":"Branch group not found"
+            }
+
+
+
+            assigned_branches = branch_group.get(
+            "AssignedBranch",
+            []
+        )
+
+
+            branch_ids=[]
+
+
+            for b in assigned_branches:
+
+                try:
+                    branch_ids.append(
+                    ObjectId(str(b))
+                )
+                except:
+                    pass
+
+
+
+        # ===============================
+        # FIND BRANCH
+        # ===============================
+
+            branch = self.db["branches"].find_one(
+
+            {
+
+                "_id":{
+                    "$in":branch_ids
+                },
+
+
+                "$or":[
+
+                    {
+                        "branchName":{
+                            "$regex":branch_name,
+                            "$options":"i"
+                        }
+                    },
+
+                    {
+                        "name":{
+                            "$regex":branch_name,
+                            "$options":"i"
+                        }
+                    }
+
+                ]
+
+            }
+
+        )
+
+
+            if not branch:
+
+                return {
+                "success":False,
+                "message":"Branch not found in branch group"
+            }
+
+
+
+        # ===============================
+        # DEVICE RBAC
+        # ===============================
+
+            device_filter = get_rbac_filter(
+            role,
+            user,
+            "devices",
+            self.db
+        )
+
+
+        # ===============================
+        # FIND VEHICLE
+        # ===============================
+
+
+            vehicle = self.db["devices"].find_one(
+
+            {
+
+                "$and":[
+
+                    {
+
+                        "$or":[
+
+                            {
+                                "branchId":branch["_id"]
+                            },
+
+                            {
+                                "branchId":str(branch["_id"])
+                            }
+
+                        ]
+
+                    },
+
+
+                    {
+
+                        "$or":[
+
+                            {
+                                "name":{
+                                    "$regex":vehicle_input,
+                                    "$options":"i"
+                                }
+                            },
+
+                            {
+                                "vehicleNumber":{
+                                    "$regex":vehicle_input,
+                                    "$options":"i"
+                                }
+                            },
+
+
+                            {
+                                "deviceId":{
+                                    "$regex":vehicle_input,
+                                    "$options":"i"
+                                }
+                            },
+
+
+                            {
+                                "uniqueId":{
+                                    "$regex":vehicle_input,
+                                    "$options":"i"
+                                }
+                            }
+
+                        ]
+
+                    },
+
+                    device_filter
+
+                ]
+
+            }
+
+        )
+
+
+
+            if not vehicle:
+
+                return {
+                "success":False,
+                "message":"Vehicle not found in this branch"
+            }
+
+
+
+            return {
+
+
+            "success":True,
+
+
+            "branch":{
+
+                "branchId":str(branch["_id"]),
+
+                "branchName":
+                    branch.get("branchName")
+
+            },
+
+
+            "vehicle":{
+
+                "deviceId":
+                    str(vehicle["_id"]),
+
+
+                "vehicleName":
+                    (
+                        vehicle.get("vehicleNumber")
+                        or vehicle.get("name")
+                    ),
+
+
+                "uniqueId":
+                    vehicle.get("uniqueId"),
+
+
+                "deviceNumber":
+                    vehicle.get("deviceId"),
+
+
+                "status":
+                    vehicle.get("status"),
+
+
+                "model":
+                    vehicle.get("model")
+
+            }
+
+        }
+
+
+
+        except Exception as e:
+
+
+            return {
+
+            "success":False,
+            "error":str(e)
+
+        }
+    def get_branchgroup_specific_branch_vehicle_distance_report(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+
+        # ===============================
+        # FIND VEHICLE
+        # ===============================
+
+
+            result = self.get_branchgroup_specific_branch_vehicles(
+
+            branch_name,
+
+            vehicle_input,
+
+            role,
+
+            user
+
+        )
+
+
+            if not result["success"]:
+                return result
+
+
+
+            vehicle = result["vehicle"]
+
+
+
+        # ===============================
+        # UNIQUE IDS
+        # ===============================
+
+
+            unique_ids = self.normalize_unique_id(
+
+            vehicle.get("uniqueId")
+
+        )
+
+
+            print(
+            "REPORT UNIQUE IDS =",
+            unique_ids
+        )
+
+
+
+        # ===============================
+        # REPORT FILTER
+        # ===============================
+
+
+            report_filter = get_rbac_filter(
+
+            role,
+
+            user,
+
+            "report_distances",
+
+            self.db
+
+        )
+
+
+
+            reports = list(
+
+            self.db["report_distances"].find(
+
+                {
+
+                    "$and":[
+
+
+                        report_filter,
+
+
+                        {
+
+                            "uniqueId":{
+
+                                "$in":unique_ids
+
+                            }
+
+                        }
+
+
+                    ]
+
+                }
+
+            )
+
+            .sort(
+                "createdAt",
+                -1
+            )
+
+            .limit(limit)
+
+        )
+
+
+
+            print(
+            "DISTANCE REPORT COUNT =",
+            len(reports)
+        )
+
+
+
+            return {
+
+
+            "success":True,
+
+
+            "branch":
+
+                result["branch"],
+
+
+
+            "vehicle":
+
+                vehicle,
+
+
+
+            "reports":[
+
+                self.clean(r)
+
+                for r in reports
+
+            ]
+
+        }
+
+
+
+        except Exception as e:
+
+
+            return {
+
+            "success":False,
+
+            "error":str(e)
+
+        }
+    def get_branchgroup_specific_branch_vehicle_status(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+        # =====================================
+        # 1. FIND VEHICLE USING EXISTING FUNCTION
+        # =====================================
+
+            result = self.get_branchgroup_specific_branch_vehicles(
+            branch_name,
+            vehicle_input,
+            role,
+            user
+        )
+
+
+            if not result["success"]:
+                return result
+
+
+
+            vehicle = result["vehicle"]
+
+            branch = result["branch"]
+
+
+
+        # =====================================
+        # 2. CALL EXISTING STATUS REPORT LOGIC
+        # =====================================
+
+            status_report = self.report_status_engine.get_single_branch_vehicle_status_report(
+
+            branch["branchId"],
+
+            vehicle["uniqueId"],
+
+            role,
+
+            user,
+
+            limit
+
+        )
+
+
+
+        # =====================================
+        # 3. RESPONSE
+        # =====================================
+
+            return {
+
+
+            "success": True,
+
+
+            "branch": branch,
+
+
+            "vehicle": vehicle,
+
+
+            "statusReport": status_report
+
+        }
+
+
+
+        except Exception as e:
+
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    def get_branchgroup_specific_branch_vehicle_travel_summary(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+        # =====================================
+        # 1. FIND VEHICLE FROM BRANCHGROUP BRANCH
+        # =====================================
+
+            result = self.get_branchgroup_specific_branch_vehicles(
+            branch_name,
+            vehicle_input,
+            role,
+            user
+        )
+
+
+            if not result["success"]:
+                return result
+
+
+
+            vehicle = result["vehicle"]
+
+            branch = result["branch"]
+
+
+
+        # =====================================
+        # 2. TRAVEL SUMMARY RBAC
+        # =====================================
+
+            summary_filter = get_rbac_filter(
+            role,
+            user,
+            "report_travelsummaries",
+            self.db
+        )
+
+
+
+        # =====================================
+        # 3. FETCH TRAVEL SUMMARY
+        # =====================================
+
+            reports = list(
+
+            self.db["report_travelsummaries"].find(
+
+                {
+
+                    "$and":[
+
+                        summary_filter,
+
+
+                        {
+
+                            "uniqueId":{
+
+                                "$in":
+                                self.normalize_unique_id(
+                                    vehicle["uniqueId"]
+                                )
+
+                            }
+
+                        }
+
+                    ]
+
+                }
+
+            )
+
+            .sort(
+                "startTime",
+                -1
+            )
+
+            .limit(limit)
+
+        )
+
+
+
+        # =====================================
+        # 4. RESPONSE
+        # =====================================
+
+            return {
+
+
+            "success":True,
+
+
+            "branch":branch,
+
+
+            "vehicle":{
+
+                "deviceId":
+                    vehicle.get("deviceId"),
+
+
+                "vehicleName":
+                    vehicle.get("vehicleName"),
+
+
+                "name":
+                    vehicle.get("vehicleName"),
+
+
+                "deviceNumber":
+                    vehicle.get("deviceNumber"),
+
+
+                "uniqueId":
+                    vehicle.get("uniqueId"),
+
+
+                "model":
+                    vehicle.get("model")
+
+            },
+
+
+            "travelSummary":[
+
+                self.clean(r)
+
+                for r in reports
+
+            ]
+
+        }
+
+
+
+        except Exception as e:
+
+
+            return {
+
+            "success":False,
+
+            "error":str(e)
+
+        }
+    def get_branchgroup_specific_branch_vehicle_last_position(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user
+):
+
+        try:
+
+        # =====================================
+        # 1. FIND VEHICLE FROM BRANCHGROUP
+        # =====================================
+
+            result = self.get_branchgroup_specific_branch_vehicles(
+            branch_name,
+            vehicle_input,
+            role,
+            user
+        )
+
+
+            if not result["success"]:
+                return result
+
+
+            vehicle = result["vehicle"]
+
+            branch = result["branch"]
+
+
+
+        # =====================================
+        # 2. FIND LAST POSITION
+        # =====================================
+
+            position = self.db["vehiclelastpositions"].find_one(
+
+            {
+
+                "$and":[
+
+
+                    get_rbac_filter(
+                        role,
+                        user,
+                        "vehiclelastpositions",
+                        self.db
+                    ),
+
+
+                    {
+
+                        "uniqueId":
+                        str(vehicle["uniqueId"])
+
+                    }
+
+                ]
+
+            }
+
+        )
+
+
+
+            if not position:
+
+                return {
+
+                "success":False,
+
+                "message":"No last position found."
+
+            }
+
+
+
+        # =====================================
+        # 3. ADDRESS FALLBACK
+        # =====================================
+
+            address = position.get("address")
+
+
+            if not address:
+
+                latitude = position.get("latitude")
+
+                longitude = position.get("longitude")
+
+
+                if latitude is not None and longitude is not None:
+
+                    address = self.get_address(
+                    latitude,
+                    longitude
+                )
+
+
+
+        # =====================================
+        # 4. RESPONSE
+        # =====================================
+
+            return {
+
+
+            "success":True,
+
+
+            "branch":branch,
+
+
+            "vehicle":{
+
+                "deviceId":
+                    vehicle.get("deviceId"),
+
+
+                "vehicleName":
+                    vehicle.get("vehicleName"),
+
+
+                "name":
+                    vehicle.get("vehicleName"),
+
+
+                "deviceNumber":
+                    vehicle.get("deviceNumber"),
+
+
+                "uniqueId":
+                    vehicle.get("uniqueId"),
+
+
+                "model":
+                    vehicle.get("model")
+
+            },
+
+
+            "lastPosition":{
+
+
+                "latitude":
+                    position.get("latitude"),
+
+
+                "longitude":
+                    position.get("longitude"),
+
+
+                "speed":
+                    position.get("speed"),
+
+
+                "course":
+                    position.get("course"),
+
+
+                "accuracy":
+                    position.get("accuracy"),
+
+
+                "altitude":
+                    position.get("altitude"),
+
+
+                "address":
+                    address,
+
+
+                "protocol":
+                    position.get("protocol"),
+
+
+                "deviceTime":
+                    position.get("deviceTime"),
+
+
+                "fixTime":
+                    position.get("fixTime"),
+
+
+                "serverTime":
+                    position.get("serverTime"),
+
+
+                "lastUpdate":
+                    position.get("lastUpdate"),
+
+
+                "valid":
+                    position.get("valid"),
+
+
+                "outdated":
+                    position.get("outdated")
+
+            }
+
+
+        }
+
+
+
+        except Exception as e:
+
+
+            return {
+
+            "success":False,
+
+            "error":str(e)
 
         }

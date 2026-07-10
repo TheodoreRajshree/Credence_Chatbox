@@ -267,6 +267,16 @@ branch_group_engine.get_branchgroup_vehicle_today_distance,
     branch_group_engine.get_branchgroup_specific_branch_vehicle_km_report,
      "get_branchgroup_vehicle_km_report":
     branch_group_engine.get_branchgroup_vehicle_km_report,
+    "get_branchgroup_specific_branch_vehicle_distance_report":
+branch_group_engine.get_branchgroup_specific_branch_vehicle_distance_report,
+"get_branchgroup_specific_branch_vehicles_g":
+branch_group_engine.get_branchgroup_specific_branch_vehicles_g,
+"get_branchgroup_specific_branch_vehicle_status":
+    branch_group_engine.get_branchgroup_specific_branch_vehicle_status,
+    "get_branchgroup_specific_branch_vehicle_distance_report":
+    branch_group_engine.get_branchgroup_specific_branch_vehicle_distance_report,
+    "get_branchgroup_specific_branch_vehicle_last_position":
+    branch_group_engine.get_branchgroup_specific_branch_vehicle_last_position,
 # =====================
 # BRANCH
 # =====================
