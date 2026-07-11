@@ -304,49 +304,17 @@ class DeviceEngine:
         {
             "$project": {
                 "_id": 0,
-                "deviceId": {
-                    "$toString": "$_id"
-                },
+                
                 "vehicleName": "$name",
                 "uniqueId": 1,
                 "sim": 1,
                 "model": 1,
                 "category": 1,
-                "status": 1,
-                "speed": 1,
-                "average": 1,
-                "installationDate": "$installationdate",
+                
                 "expirationDate": "$expirationdate",
-                "schoolId": {
-                    "$cond": [
-                        {
-                            "$ifNull": [
-                                "$schoolId",
-                                False
-                            ]
-                        },
-                        {
-                            "$toString": "$schoolId"
-                        },
-                        None
-                    ]
-                },
-                "schoolName": "$school.schoolName",
-                "branchId": {
-                    "$cond": [
-                        {
-                            "$ifNull": [
-                                "$branchId",
-                                False
-                            ]
-                        },
-                        {
-                            "$toString": "$branchId"
-                        },
-                        None
-                    ]
-                },
-                "branchName": "$branch.branchName"
+                
+                
+               
             }
         }
     ]
