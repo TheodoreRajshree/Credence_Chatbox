@@ -15,7 +15,7 @@ class DeviceEngine:
      
     def find_device(self, text, role, user):
 
-        text = text.lower()
+        text = text.strip().lower()
 
         rbac_filter = get_rbac_filter(
             role,
@@ -24,42 +24,190 @@ class DeviceEngine:
             self.db
         )
 
-        for device in self.db["devices"].find(rbac_filter):
-            name = device.get("name", "").lower()
+        regex = re.compile(re.escape(text), re.IGNORECASE)
 
-            if name and name in text:
-                return device
+        pipeline = [
+            {
+                "$match": rbac_filter
+            },
+            {
+                "$match": {
+                    "$or": [
+                        {"name": regex},
+                        {"uniqueId": text}
+                    ]
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "schools",
+                    "localField": "schoolId",
+                    "foreignField": "_id",
+                    "as": "school"
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "branches",
+                    "localField": "branchId",
+                    "foreignField": "_id",
+                    "as": "branch"
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$school",
+                    "preserveNullAndEmptyArrays": True
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$branch",
+                    "preserveNullAndEmptyArrays": True
+                }
+            },
+            {
+                "$limit": 1
+            }
+        ]
 
-        return None
+        result = list(self.db["devices"].aggregate(pipeline))
+
+        return result[0] if result else None
 
     # ==========================================
     # DEVICE DETAILS
     # ==========================================
 
-    def get_device_details(self, device):
+    # def get_device_details(self, device):
 
-        if not device:
-            return None
+    #     if not device:
+    #         return None
 
-        return {
-            "deviceId": str(device["_id"]),
-            "vehicleName": device.get("name"),
-            "uniqueId": device.get("uniqueId"),
-            "sim": device.get("sim"),
-            "model": device.get("model"),
-            "category": device.get("category"),
-            "status": device.get("status"),
-            "speed": device.get("speed"),
-            "average": device.get("average"),
-            # "totalKm": device.get("TotalKmOfDevice"),
-            "installationDate": device.get("installationdate"),
-            "expirationDate": device.get("expirationdate"),
-            "schoolId": str(device.get("schoolId"))
-            if device.get("schoolId") else None,
-            "branchId": str(device.get("branchId"))
-            if device.get("branchId") else None
-            
+    #     school = None
+    #     branch = None
+
+    #     if device.get("schoolId"):
+    #         school = self.db["schools"].find_one(
+    #         {"_id": device.get("schoolId")}
+    #     )
+
+    #     if device.get("branchId"):
+    #         branch = self.db["branches"].find_one(
+    #         {"_id": device.get("branchId")}
+    #     )
+
+    #     return {
+    #     "deviceId": str(device["_id"]),
+    #     "vehicleName": device.get("name"),
+    #     "uniqueId": device.get("uniqueId"),
+    #     "sim": device.get("sim"),
+    #     "model": device.get("model"),
+    #     "category": device.get("category"),
+    #     "status": device.get("status"),
+    #     "speed": device.get("speed"),
+    #     "average": device.get("average"),
+
+    #     # totalKm removed
+
+    #     "installationDate": device.get("installationdate"),
+    #     "expirationDate": device.get("expirationdate"),
+
+    #     "schoolId": str(device.get("schoolId")) if device.get("schoolId") else None,
+    #     "schoolName": school.get("schoolName") if school else None,
+
+    #     "branchId": str(device.get("branchId")) if device.get("branchId") else None,
+    #     "branchName": branch.get("branchName") if branch else None
+    # }
+
+    def get_device_details(self,device):
+
+        pipeline = [
+        {
+            "$match": {
+                "_id": device["_id"]
+            }
+        },
+        {
+            "$lookup": {
+                "from": "schools",
+                "localField": "schoolId",
+                "foreignField": "_id",
+                "as": "school"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "branches",
+                "localField": "branchId",
+                "foreignField": "_id",
+                "as": "branch"
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$school",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$branch",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "deviceId": {
+                    "$toString": "$_id"
+                },
+                "vehicleName": "$name",
+                "uniqueId": 1,
+                "sim": 1,
+                "model": 1,
+                "category": 1,
+                "status": 1,
+                "speed": 1,
+                "average": 1,
+                "installationDate": "$installationdate",
+                "expirationDate": "$expirationdate",
+                "schoolId": {
+                    "$cond": [
+                        {
+                            "$ifNull": [
+                                "$schoolId",
+                                False
+                            ]
+                        },
+                        {
+                            "$toString": "$schoolId"
+                        },
+                        None
+                    ]
+                },
+                "schoolName": "$school.schoolName",
+                "branchId": {
+                    "$cond": [
+                        {
+                            "$ifNull": [
+                                "$branchId",
+                                False
+                            ]
+                        },
+                        {
+                            "$toString": "$branchId"
+                        },
+                        None
+                    ]
+                },
+                "branchName": "$branch.branchName"
+            }
         }
+    ]
+
+        return list(self.db["devices"].aggregate(pipeline))
+
     def get_superadmin_vehicle_details(self, role, user, vehicle_input=None):
 
         if isinstance(vehicle_input, dict):
@@ -114,19 +262,98 @@ class DeviceEngine:
 
     def get_all_devices(self, role, user):
 
-        devices = []
-
         rbac_filter = get_rbac_filter(
             role,
             user,
             "devices",
             self.db
         )
+        
+        pipeline = [
+        {
+            "$match": rbac_filter
+        },
+        {
+            "$lookup": {
+                "from": "schools",
+                "localField": "schoolId",
+                "foreignField": "_id",
+                "as": "school"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "branches",
+                "localField": "branchId",
+                "foreignField": "_id",
+                "as": "branch"
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$school",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$branch",
+                "preserveNullAndEmptyArrays": True
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "deviceId": {
+                    "$toString": "$_id"
+                },
+                "vehicleName": "$name",
+                "uniqueId": 1,
+                "sim": 1,
+                "model": 1,
+                "category": 1,
+                "status": 1,
+                "speed": 1,
+                "average": 1,
+                "installationDate": "$installationdate",
+                "expirationDate": "$expirationdate",
+                "schoolId": {
+                    "$cond": [
+                        {
+                            "$ifNull": [
+                                "$schoolId",
+                                False
+                            ]
+                        },
+                        {
+                            "$toString": "$schoolId"
+                        },
+                        None
+                    ]
+                },
+                "schoolName": "$school.schoolName",
+                "branchId": {
+                    "$cond": [
+                        {
+                            "$ifNull": [
+                                "$branchId",
+                                False
+                            ]
+                        },
+                        {
+                            "$toString": "$branchId"
+                        },
+                        None
+                    ]
+                },
+                "branchName": "$branch.branchName"
+            }
+        }
+    ]
 
-        for d in self.db["devices"].find(rbac_filter):
-            devices.append(self.get_device_details(d))
 
-        return devices
+        return list(self.db.devices.aggregate(pipeline))
+
 
     # ==========================================
     # SCHOOL DEVICES
