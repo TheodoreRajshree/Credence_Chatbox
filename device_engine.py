@@ -54,25 +54,11 @@ class DeviceEngine:
             # "totalKm": device.get("TotalKmOfDevice"),
             "installationDate": device.get("installationdate"),
             "expirationDate": device.get("expirationdate"),
-            # "schoolId": str(device.get("schoolId"))
-            # if device.get("schoolId") else None,
-            # "branchId": str(device.get("branchId"))
-            # if device.get("branchId") else None
             "schoolId": str(device.get("schoolId"))
             if device.get("schoolId") else None,
-
-            "schoolName": self.db["schools"].find_one(
-            {"_id": device.get("schoolId")},
-            {"schoolName": 1}
-            ).get("schoolName") if device.get("schoolId") else None,
-
             "branchId": str(device.get("branchId"))
-            if device.get("branchId") else None,
-
-            "branchName": self.db["branches"].find_one(
-            {"_id": device.get("branchId")},
-            {"branchName": 1}
-            ).get("branchName") if device.get("branchId") else None,
+            if device.get("branchId") else None
+            
         }
     def get_superadmin_vehicle_details(self, role, user, vehicle_input=None):
 
