@@ -217,19 +217,62 @@ class DeviceEngine:
             return None
 
         vehicle_input = vehicle_input.strip().lower()
-        devices=self.db.devices.find({})
+
+        devices = self.db["devices"].find({})
 
         matched = []
 
         for device in devices:
 
-                name = (device.get("name") or "").strip().lower()
-                unique_id = str(device.get("uniqueId") or "").strip().lower()
+            name = (device.get("name") or "").strip().lower()
+            unique_id = str(device.get("uniqueId") or "").strip().lower()
 
-        # match by vehicle name OR uniqueId
-                if vehicle_input in name or vehicle_input == unique_id:
+        # Match by vehicle name or uniqueId
+            if vehicle_input in name or vehicle_input == unique_id:
 
-                    matched.append({
+            # Get latest history for total distance
+                history = self.db["histories"].find_one(
+                {
+                    "uniqueId": {
+                        "$in": self.normalize_unique_id(
+                            device.get("uniqueId")
+                        )
+                    },
+                    "attributes.totalDistance": {
+                        "$ne": None
+                    }
+                },
+                sort=[("createdAt", -1)]
+            )
+
+                total_km = (
+                round(
+                    history.get("attributes", {}).get("totalDistance", 0) / 1000,
+                    2
+                )
+                if history else 0
+            )
+
+                school = (
+                self.db["schools"].find_one(
+                    {"_id": device.get("schoolId")},
+                    {"schoolName": 1}
+                )
+                if device.get("schoolId")
+                else None
+            )
+
+                branch = (
+                self.db["branches"].find_one(
+                    {"_id": device.get("branchId")},
+                    {"branchName": 1}
+                )
+                if device.get("branchId")
+                else None
+            )
+
+                matched.append({
+
                 "deviceId": str(device["_id"]),
                 "vehicleName": device.get("name"),
                 "uniqueId": device.get("uniqueId"),
@@ -239,23 +282,18 @@ class DeviceEngine:
                 "status": device.get("status"),
                 "speed": device.get("speed"),
                 "average": device.get("average"),
-                # "totalKm": device.get("TotalKmOfDevice"),
+
+                # Latest total distance (KM)
+                "totalKm": total_km,
+
                 "installationDate": device.get("installationdate"),
                 "expirationDate": device.get("expirationdate"),
-                # "schoolId": str(device.get("schoolId")) if device.get("schoolId") else None,
-                # "branchId": str(device.get("branchId")) if device.get("branchId") else None
-                "schoolName": self.db["schools"].find_one(
-                {"_id": device.get("schoolId")},
-                {"schoolName": 1}
-                ).get("schoolName") if device.get("schoolId") else None,
 
-                "branchName": self.db["branches"].find_one(
-                {"_id": device.get("branchId")},
-                {"branchName": 1}
-                ).get("branchName") if device.get("branchId") else None,
+                "schoolName": school.get("schoolName") if school else None,
+                "branchName": branch.get("branchName") if branch else None,
             })
 
-        return matched  if matched else None
+        return matched if matched else None
     # ==========================================
     # ALL DEVICES
     # ==========================================
