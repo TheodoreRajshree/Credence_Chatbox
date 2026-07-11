@@ -58,7 +58,7 @@ class PredefinedChatRequest(BaseModel):
     branch_name: str | None = None
     vehicle_input: str | None = None
     function: str | None = None
-
+    branchgroup_input: str | None = None
 # ==========================
 # DB CONNECTION
 # ==========================
@@ -403,9 +403,11 @@ def predefined_chat(
 
         input_value = {
     "branch_name": req.branch_name,
-    "vehicle_input": req.vehicle_input
+    "vehicle_input": req.vehicle_input,
+    "branchgroup_input": req.branchgroup_input
+   
 }
-
+        print(req.model_dump())
         response = execute_predefined_question(
     role,
     user,

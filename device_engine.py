@@ -207,7 +207,7 @@ class DeviceEngine:
     ]
 
         return list(self.db["devices"].aggregate(pipeline))
-
+    
     def get_superadmin_vehicle_details(self, role, user, vehicle_input=None):
 
         if isinstance(vehicle_input, dict):
@@ -756,7 +756,7 @@ class DeviceEngine:
 
     }
     
-    def get_specific_branch_group_profile(
+    def get_specific_branch_group_profile_1(
     self,
     role,
     user,
@@ -2623,5 +2623,143 @@ class DeviceEngine:
             "geofences",
             self.db
         )
+    def get_specific_branch_group_profile(
+    self,
+    role,
+    user,
+    branchgroup_input=None
+):
+
+    # ====================================
+    # STEP 1: SUPERADMIN ACCESS CHECK
+    # ====================================
+
+        if role != "superadmin":
+            return {
+            "success": False,
+            "message": "Access denied"
+        }
+
+
+    # ====================================
+    # STEP 2: GET BRANCH GROUP INPUT
+    # ====================================
+
+        print("========== BRANCH GROUP DEBUG ==========")
+        print("RAW INPUT =", branchgroup_input)
+        print("INPUT TYPE =", type(branchgroup_input))
+
+
+        if isinstance(branchgroup_input, dict):
+
+            branchgroup_input = (
+                branchgroup_input.get("branch_group_input")
+            or branchgroup_input.get("branchgroup_input")
+            or branchgroup_input.get("branchGroupName")
+            or branchgroup_input.get("branch_group_name")
+        )
+
+
+        print("FINAL BRANCH GROUP INPUT =", branchgroup_input)
+        print("========================================")
+
+
+        if not branchgroup_input:
+
+            return {
+            "success": False,
+            "message": "Branch group name is required"
+        }
+
+
+        branchgroup_input = str(branchgroup_input).strip()
+
+
+    # ====================================
+    # STEP 3: FIND BRANCH GROUP
+    # ====================================
+
+        group = self.db["branchgroups"].find_one(
+        {
+            "branchGroupName": {
+                "$regex": f"^{branchgroup_input}$",
+                "$options": "i"
+            }
+        }
+    )
+
+
+        if not group:
+
+            return {
+            "success": False,
+            "message": "Branch group not found"
+        }
+
+
+    # ====================================
+    # STEP 4: FORMAT PROFILE
+    # ====================================
+
+        profile = {
+
+        "groupId": str(group["_id"]),
+
+        "branchGroupName": group.get(
+            "branchGroupName"
+        ),
+
+        "schoolId": (
+            str(group.get("schoolId"))
+            if group.get("schoolId")
+            else None
+        ),
+
+        "mobileNo": group.get(
+            "mobileNo"
+        ),
+
+        "username": group.get(
+            "username"
+        ),
+
+        "email": group.get(
+            "email"
+        ),
+
+        "role": group.get(
+            "role"
+        ),
+
+        "active": group.get(
+            "Active"
+        ),
+
+        "access": group.get(
+            "access"
+        ),
+
+        "notification": group.get(
+            "Notification"
+        ),
+
+        "fcmToken": group.get(
+            "fcmToken"
+        ),
+
+        "createdAt": group.get(
+            "createdAt"
+        )
+    }
+
+
+    # ====================================
+    # STEP 5: RESPONSE
+    # ====================================
+
+        return {
+        "success": True,
+        "profile": profile
+    }
 
 

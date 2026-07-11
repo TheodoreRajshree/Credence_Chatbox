@@ -66,6 +66,19 @@ QUESTIONS = {
   "intent": "all_branchgroup_profile",
   "function": "get_all_branch_groups_profile"
 },
+{
+    "id": 5099223333901,
+    "question": "Show a specific branch group profile",
+    "function": "get_specific_branch_group_profile",
+    "fields": [
+        {
+            "name": "branchgroup_input",
+            "type": "text",
+            "label": "Enter Branch Group Name",
+            "placeholder": "Example: Nagpur"
+        }
+    ]
+},
 # {
 #   "id": 122011005,
 #   "question": "Specific Branch Group Profile",

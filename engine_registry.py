@@ -279,8 +279,8 @@ branch_group_engine.get_branchgroup_specific_branch_vehicles_g,
     branch_group_engine.get_branchgroup_specific_branch_vehicle_last_position,
     "get_all_branch_groups_profile":
     device_engine.get_all_branch_groups_profile,
-    "get_specific_branch_group_profile":
-    device_engine.get_specific_branch_group_profile,
+    # "get_specific_branch_group_profile":
+    # device_engine.get_specific_branch_group_profile,
     "get_specific_vehicle_last_position":
     device_engine.get_specific_vehicle_last_position,
 # =====================
@@ -386,7 +386,8 @@ branch_group_engine.get_branch_group_profile,
 
 # "get_group_details":
 #     branch_group_engine.get_group_details,
-
+"get_specific_branch_group_profile":
+    device_engine.get_specific_branch_group_profile,
 
 
 

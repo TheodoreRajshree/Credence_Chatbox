@@ -253,7 +253,19 @@ def execute_engine(engine_method, role, user, message=None):
             )
         elif name == "vehicle_input":
             args.append(message)
+        elif name == "branchgroup_input":
 
+            if isinstance(message, dict):
+
+                args.append(
+            message.get("branch_group_input")
+            or message.get("branchgroup_input")
+            or message.get("branchGroupName")
+        )
+
+            else:
+
+                args.append(message)
 
         elif name == "message":
 
@@ -389,6 +401,7 @@ def execute_predefined_question(
             "get_specific_active_vehicle",
             "get_specific_stopped_vehicle",
            "get_specific_status_report",
+           
          
             
             
@@ -615,26 +628,24 @@ def execute_predefined_question(
         vehicle_input
 
     )
-            elif function_name == "get_specific_branch_group_profile":
+            
+            
+                    
+            if function_name == "get_specific_branch_group_profile":
 
-                group_name = None
+                print("INPUT VALUE =", input_value)
 
-                if isinstance(input_value, dict):
+                branchgroup_name = (
+        input_value.get("branchgroup_input")
+        or input_value.get("branchGroupName")
+    )
 
-                    group_name = input_value.get("group_name")
-
-                else:
-
-                    group_name = input_value
-
-
-                print("BRANCH GROUP INPUT =", group_name)
-
+                print("BRANCH GROUP NAME =", branchgroup_name)
 
                 result = engine_method(
         role,
         user,
-        group_name
+        branchgroup_name
     )
             elif function_name == "get_specific_active_vehicle":
 
