@@ -2,12 +2,12 @@ QUESTIONS = {
 
 "superadmin":[
 
-# {
-# "id":101,
-# "question":"Show all vehicles",
-# "intent":"devices",
-# "function":"get_all_devices"
-# },
+{
+"id":101,
+"question":"Show all vehicles",
+"intent":"devices",
+"function":"get_all_devices"
+},
 
 
 {
