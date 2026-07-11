@@ -49,7 +49,10 @@ class SchoolEngine:
             pass
 
         return list(set(ids))
+   
+
     def clean(self, doc):
+
         if not doc:
             return doc
 
@@ -65,12 +68,60 @@ class SchoolEngine:
 
             elif isinstance(v, list):
                 result[k] = [
-                self.clean(item) if isinstance(item, dict) else item
-                for item in v
+                    self.clean(item) if isinstance(item, dict) else item
+                    for item in v
             ]
 
             else:
                 result[k] = v
+
+    # ==========================================
+    # Populate School
+    # ==========================================
+
+        school_id = doc.get("schoolId")
+
+        if school_id:
+
+            try:
+
+                if isinstance(school_id, str):
+                    school_id = ObjectId(school_id)
+
+                school = self.db["schools"].find_one(
+                {"_id": school_id},
+                {"name": 1}
+            )
+
+                if school:
+                    result["schoolName"] = school.get("name")
+
+            except:
+                pass
+
+    # ==========================================
+    # Populate Branch
+    # ==========================================
+
+        branch_id = doc.get("branchId")
+
+        if branch_id:
+
+            try:
+
+                if isinstance(branch_id, str):
+                    branch_id = ObjectId(branch_id)
+
+                branch = self.db["branches"].find_one(
+                {"_id": branch_id},
+                {"name": 1}
+            )
+
+                if branch:
+                    result["branchName"] = branch.get("name")
+
+            except:
+                pass
 
         return result
     def get_specific_vehicle_idle_report(

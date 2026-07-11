@@ -1108,7 +1108,6 @@ class BranchGroupEngine:
 
     }
     
-
     def get_branchgroup_vehicle_school_branch(
     self,
     group_id,
@@ -1147,7 +1146,7 @@ class BranchGroupEngine:
         }
 
 
-
+         
     # =====================================
     # FIND BRANCH GROUP
     # =====================================

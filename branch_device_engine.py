@@ -1446,27 +1446,83 @@ class BranchDeviceEngine:
     # CLEAN
     # =====================================================
 
-    def clean(self,doc):
+    # def clean(self,doc):
+
+    #     if not doc:
+    #         return doc
+
+
+    #     cleaned={}
+
+
+    #     for key,value in doc.items():
+
+    #         if isinstance(value,ObjectId):
+
+    #             cleaned[key]=str(value)
+
+    #         else:
+
+    #             cleaned[key]=value
+
+
+    #     return cleaned
+  
+
+    def clean(self, doc):
 
         if not doc:
             return doc
 
+        result = {}
 
-        cleaned={}
+        for k, v in doc.items():
 
-
-        for key,value in doc.items():
-
-            if isinstance(value,ObjectId):
-
-                cleaned[key]=str(value)
-
+        # Convert ObjectId to string
+            if isinstance(v, ObjectId):
+                result[k] = str(v)
             else:
+                result[k] = v
 
-                cleaned[key]=value
+    # =====================================
+    # Populate School
+    # =====================================
 
+        school_id = doc.get("schoolId")
 
-        return cleaned
+        if school_id:
+
+            if isinstance(school_id, str):
+                school_id = ObjectId(school_id)
+
+            school = self.db["schools"].find_one(
+            {"_id": school_id},
+            {"name": 1}
+        )
+
+            if school:
+                result["schoolName"] = school.get("name")
+
+    # =====================================
+    # Populate Branch
+    # =====================================
+
+        branch_id = doc.get("branchId")
+
+        if branch_id:
+
+            if isinstance(branch_id, str):
+                branch_id = ObjectId(branch_id)
+
+            branch = self.db["branches"].find_one(
+            {"_id": branch_id},
+            {"name": 1}
+        )
+
+            if branch:
+                result["branchName"] = branch.get("name")
+
+        return result
     def get_branch_status_report(
     self,
     branch_id,

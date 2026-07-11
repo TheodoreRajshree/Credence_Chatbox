@@ -242,7 +242,7 @@ class AllEventsEngine:
         user,
         limit=100
     ):
-
+    
 
         device_filter = get_rbac_filter(
             role,

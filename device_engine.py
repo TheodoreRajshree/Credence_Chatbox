@@ -2,6 +2,8 @@ from bson import ObjectId
 from rbac import get_rbac_filter
 import re
 from unique_id import normalize_unique_id
+from datetime import datetime, timedelta, timezone
+import re
 class DeviceEngine:
 
     def __init__(self, db):
@@ -1315,6 +1317,8 @@ class DeviceEngine:
         ]
 
     }
+   
+
     def clean(self, doc):
 
         if not doc:
@@ -1326,89 +1330,143 @@ class DeviceEngine:
 
             if isinstance(v, ObjectId):
                 result[k] = str(v)
-
             else:
                 result[k] = v
 
+    # ==========================================
+    # Populate School Name
+    # ==========================================
+
+        school_id = doc.get("schoolId")
+
+        if school_id:
+
+            try:
+
+                if isinstance(school_id, str):
+                    school_id = ObjectId(school_id)
+
+                school = self.db["schools"].find_one(
+                {"_id": school_id},
+                {"name": 1}
+            )
+
+                if school:
+                    result["schoolName"] = school.get("name")
+
+            except Exception:
+                pass
+
+    # ==========================================
+    # Populate Branch Name
+    # ==========================================
+
+        branch_id = doc.get("branchId")
+
+        if branch_id:
+
+            try:
+
+                if isinstance(branch_id, str):
+                    branch_id = ObjectId(branch_id)
+
+                branch = self.db["branches"].find_one(
+                {"_id": branch_id},
+                {"name": 1}
+            )
+
+                if branch:
+                    result["branchName"] = branch.get("name")
+
+            except Exception:
+                pass
+
         return result
+    
+    def normalize_unique_id(self, uid):
+
+        ids = []
+
+        if uid is None:
+            return ids
+
+        ids.append(uid)
+        ids.append(str(uid))
+
+        try:
+            ids.append(int(float(uid)))
+        except:
+            pass
+
+        try:
+            ids.append(float(uid))
+        except:
+            pass
+
+        return list(set(ids))
+    # accurate today distance
     def get_specific_distance_report(
     self,
     role,
     user,
-    vehicle_input=None,
-    limit=200
+    vehicle_input=None
 ):
 
-    # ====================================
-    # STEP 1: VEHICLE INPUT
-    # ====================================
+    # =====================================
+    # 1. Vehicle Input
+    # =====================================
 
-        vehicle_name = str(vehicle_input or "").strip()
+        if isinstance(vehicle_input, dict):
+            vehicle_input = vehicle_input.get("vehicle_input")
 
+        vehicle_input = str(vehicle_input or "").strip()
 
-        if not vehicle_name:
-
+        if not vehicle_input:
             return {
-
             "success": False,
-
-            "message": "Please enter vehicle name or unique ID"
-
+            "message": "Please enter vehicle name or unique ID."
         }
 
-
-    # ====================================
-    # STEP 2: RBAC FILTER
-    # ====================================
-
-        report_filter = get_rbac_filter(
-
-        role,
-
-        user,
-
-        "report_distances",
-
-        self.db
-
-    )
-
+    # =====================================
+    # 2. Find Vehicle
+    # =====================================
 
         regex = re.compile(
-
-        re.escape(vehicle_name),
-
+        re.escape(vehicle_input),
         re.IGNORECASE
-
     )
 
-
-        query = {
+        device = self.db["devices"].find_one({
 
         "$and": [
 
-            report_filter,
+            get_rbac_filter(
+                role,
+                user,
+                "devices",
+                self.db
+            ),
 
             {
 
                 "$or": [
 
                     {
-
-                        "vehicleName": regex
-
-                    },
-
-                    {
-
                         "name": regex
-
                     },
 
                     {
+                        "vehicleName": regex
+                    },
 
-                        "uniqueId": regex
+                    {
+                        "uniqueId": vehicle_input
+                    },
 
+                    {
+                        "uniqueId": {
+                            "$in": self.normalize_unique_id(vehicle_input)
+                        }
                     }
 
                 ]
@@ -1417,60 +1475,348 @@ class DeviceEngine:
 
         ]
 
-    }
+    })
 
-
-    # ====================================
-    # STEP 3: FETCH REPORTS
-    # ====================================
-
-        reports = list(
-
-        self.db["report_distances"]
-
-        .find(query)
-
-        .sort(
-
-            "createdAt",
-
-            -1
-
-        )
-
-        .limit(limit)
-
-    )
-
-
-        if not reports:
-
+        if not device:
             return {
-
             "success": False,
-
-            "message": "No distance report found"
-
+            "message": "Vehicle not found."
         }
 
+        unique_ids = self.normalize_unique_id(
+        device["uniqueId"]
+    )
 
-    # ====================================
-    # STEP 4: RESPONSE
-    # ====================================
+    # =====================================
+    # 3. Today's IST Time
+    # =====================================
+
+        IST = timezone(timedelta(hours=5, minutes=30))
+
+        now = datetime.now(IST)
+
+        today_start = now.replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0
+    )
+
+        today_end = now.replace(
+        hour=23,
+        minute=59,
+        second=59,
+        microsecond=999999
+    )
+
+    # =====================================
+    # 4. Aggregate History
+    # =====================================
+
+        pipeline = [
+
+        {
+            "$match": {
+
+                "$and": [
+
+                    get_rbac_filter(
+                        role,
+                        user,
+                        "histories",
+                        self.db
+                    ),
+
+                    {
+                        "uniqueId": {
+                            "$in": unique_ids
+                        }
+                    },
+
+                    {
+                        "attributes.totalDistance": {
+                            "$ne": None
+                        }
+                    },
+
+                    {
+                        "createdAt": {
+                            "$gte": today_start,
+                            "$lte": today_end
+                        }
+                    }
+
+                ]
+
+            }
+        },
+
+        {
+            "$sort": {
+                "createdAt": 1
+            }
+        },
+
+        {
+            "$project": {
+
+                "_id": 0,
+
+                "name": 1,
+
+                "createdAt": 1,
+
+                "totalDistanceKm": {
+                    "$divide": [
+                        "$attributes.totalDistance",
+                        1000
+                    ]
+                }
+
+            }
+        },
+
+        {
+            "$group": {
+
+                "_id": None,
+
+                "vehicleName": {
+                    "$first": "$name"
+                },
+
+                "startDistance": {
+                    "$first": "$totalDistanceKm"
+                },
+
+                "endDistance": {
+                    "$last": "$totalDistanceKm"
+                },
+
+                "firstRecord": {
+                    "$first": "$createdAt"
+                },
+
+                "lastRecord": {
+                    "$last": "$createdAt"
+                }
+
+            }
+        },
+
+        {
+            "$project": {
+
+                "_id": 0,
+
+                "vehicleName": 1,
+
+                "firstRecord": 1,
+
+                "lastRecord": 1,
+
+                "todayDistance": {
+
+                    "$round": [
+
+                        {
+                            "$subtract": [
+                                "$endDistance",
+                                "$startDistance"
+                            ]
+                        },
+
+                        2
+
+                    ]
+
+                }
+
+            }
+        }
+
+    ]
+
+        report = list(
+        self.db["histories"].aggregate(pipeline)
+    )
+
+        if not report:
+
+            return {
+            "success": False,
+            "message": "No history found for today."
+        }
+
+        report = report[0]
 
         return {
 
         "success": True,
 
-        "reports": [
+        "vehicle": {
 
-            self.clean(report)
+            "vehicleName": device.get("name"),
+            "deviceId": str(device.get("_id")),
+            "uniqueId": device.get("uniqueId"),
+            "status": device.get("status"),
+            "category": device.get("category"),
+            "model": device.get("model")
 
-            for report in reports
+        },
 
-        ]
+        "todayAccurateDistance": {
+
+            "date": now.strftime("%Y-%m-%d"),
+
+            "distanceKm": report["todayDistance"],
+
+            "firstRecord": report["firstRecord"],
+
+            "lastRecord": report["lastRecord"]
+
+        }
 
     }
+#     self,
+#     role,
+#     user,
+#     vehicle_input=None,
+#     limit=200
+# ):
+
+#     # ====================================
+#     # STEP 1: VEHICLE INPUT
+#     # ====================================
+
+#         vehicle_name = str(vehicle_input or "").strip()
+
+
+#         if not vehicle_name:
+
+#             return {
+
+#             "success": False,
+
+#             "message": "Please enter vehicle name or unique ID"
+
+#         }
+
+
+#     # ====================================
+#     # STEP 2: RBAC FILTER
+#     # ====================================
+
+#         report_filter = get_rbac_filter(
+
+#         role,
+
+#         user,
+
+#         "report_distances",
+
+#         self.db
+
+#     )
+
+
+#         regex = re.compile(
+
+#         re.escape(vehicle_name),
+
+#         re.IGNORECASE
+
+#     )
+
+
+#         query = {
+
+#         "$and": [
+
+#             report_filter,
+
+#             {
+
+#                 "$or": [
+
+#                     {
+
+#                         "vehicleName": regex
+
+#                     },
+
+#                     {
+
+#                         "name": regex
+
+#                     },
+
+#                     {
+
+#                         "uniqueId": regex
+
+#                     }
+
+#                 ]
+
+#             }
+
+#         ]
+
+#     }
+
+
+#     # ====================================
+#     # STEP 3: FETCH REPORTS
+#     # ====================================
+
+#         reports = list(
+
+#         self.db["report_distances"]
+
+#         .find(query)
+
+#         .sort(
+
+#             "createdAt",
+
+#             -1
+
+#         )
+
+#         .limit(limit)
+
+#     )
+
+
+#         if not reports:
+
+#             return {
+
+#             "success": False,
+
+#             "message": "No distance report found"
+
+#         }
+
+
+#     # ====================================
+#     # STEP 4: RESPONSE
+#     # ====================================
+
+#         return {
+
+#         "success": True,
+
+#         "reports": [
+
+#             self.clean(report)
+
+#             for report in reports
+
+#         ]
+
+#     }
     def get_specific_trip_report(
     self,
     role,
