@@ -284,7 +284,7 @@ class DeviceEngine:
                 "average": device.get("average"),
 
                 # Latest total distance (KM)
-                "totalKm": total_km,
+                "todayKm": total_km,
 
                 "installationDate": device.get("installationdate"),
                 "expirationDate": device.get("expirationdate"),
