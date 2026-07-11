@@ -1468,61 +1468,75 @@ class BranchDeviceEngine:
 
     #     return cleaned
   
+   
 
     def clean(self, doc):
 
         if not doc:
             return doc
 
-        result = {}
+        cleaned = {}
 
-        for k, v in doc.items():
+        for key, value in doc.items():
 
-        # Convert ObjectId to string
-            if isinstance(v, ObjectId):
-                result[k] = str(v)
+            if isinstance(value, ObjectId):
+                cleaned[key] = str(value)
             else:
-                result[k] = v
+                cleaned[key] = value
 
     # =====================================
-    # Populate School
+    # Populate School Name
     # =====================================
 
         school_id = doc.get("schoolId")
 
         if school_id:
 
-            if isinstance(school_id, str):
-                school_id = ObjectId(school_id)
+            try:
 
-            school = self.db["schools"].find_one(
-            {"_id": school_id},
-            {"name": 1}
-        )
+                if isinstance(school_id, str):
+                    school_id = ObjectId(school_id)
 
-            if school:
-                result["schoolName"] = school.get("name")
+                school = self.db["schools"].find_one(
+                {"_id": school_id}
+            )
+
+                if school:
+                    cleaned["schoolName"] = (
+                    school.get("name")
+                    or school.get("schoolName")
+                )
+
+            except Exception:
+                pass
 
     # =====================================
-    # Populate Branch
+    # Populate Branch Name
     # =====================================
 
         branch_id = doc.get("branchId")
 
         if branch_id:
 
-            if isinstance(branch_id, str):
-                branch_id = ObjectId(branch_id)
+            try:
 
-            branch = self.db["branches"].find_one(
-            {"_id": branch_id},
-            {"name": 1}
-        )
+                if isinstance(branch_id, str):
+                    branch_id = ObjectId(branch_id)
 
-            if branch:
-                result["branchName"] = branch.get("name")
+                branch = self.db["branches"].find_one(
+                {"_id": branch_id}
+            )
 
-        return result
+                if branch:
+                    cleaned["branchName"] = (
+                    branch.get("name")
+                    or branch.get("branchName")
+                )
+
+            except Exception:
+                pass
+
+        return cleaned
     def get_branch_status_report(
     self,
     branch_id,
