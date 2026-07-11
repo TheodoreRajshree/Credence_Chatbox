@@ -46,39 +46,27 @@ QUESTIONS = {
 #     }
 #   ]
 # },
-# {
-#     "id": 400,
-#     "question": "Show Schools",
-#     "intent": "schools",
+{
+    "id": 400,
+    "question": "Show All Schools ",
+    "intent": "schools",
     
-#     "function": "find_school_superadmin",
-# },
-# {
-#     "id": 4000,
-#     "question": "Show branch",
-#     "intent": "schools",
+    "function": "find_school_superadmin",
+},
+{
+    "id": 4000,
+    "question": "Show  All Branches",
+    "intent": "schools",
     
-#     "function": "find_branch_superadmin",
-# },
+    "function": "find_branch_superadmin",
+},
 {
   "id": 12293,
-  "question": "Show all branch groups",
+  "question": "Show All Branchgroups",
   "intent": "all_branchgroup_profile",
   "function": "get_all_branch_groups_profile"
 },
-{
-    "id": 5099223333901,
-    "question": "Show a specific branch group profile",
-    "function": "get_specific_branch_group_profile",
-    "fields": [
-        {
-            "name": "branchgroup_input",
-            "type": "text",
-            "label": "Enter Branch Group Name",
-            "placeholder": "Example: Nagpur"
-        }
-    ]
-},
+
 # {
 #   "id": 122011005,
 #   "question": "Specific Branch Group Profile",
@@ -94,7 +82,7 @@ QUESTIONS = {
 # },
 {
         "id": 3113,
-        "question":"Show Branch ",
+        "question":"Show Specific Branch ",
       
         "intent": "school",
         "function": "find_specific_branch_superadmin",
@@ -109,7 +97,7 @@ QUESTIONS = {
       },
 {
         "id": 3112,
-        "question":"Show School ",
+        "question":"Show Specific School ",
       
         "intent": "school",
         "function": "find_specific_school_superadmin",
@@ -122,6 +110,19 @@ QUESTIONS = {
           }
         ]
       },
+{
+    "id": 5099223333901,
+    "question": "Show Specific Branchgroup ",
+    "function": "get_specific_branch_group_profile",
+    "fields": [
+        {
+            "name": "branchgroup_input",
+            "type": "text",
+            "label": "Enter Branch Group Name",
+            "placeholder": "Example: Nagpur"
+        }
+    ]
+},
 {
         "id": 3119,
         "question":"all devices km report overall",
