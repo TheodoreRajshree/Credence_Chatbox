@@ -1256,14 +1256,27 @@ class BranchEngine:
 
         }
     
-    def find_specific_branch_superadmin(self, role, user, input_value=None):
+    
+    def find_specific_branch_superadmin(
+    self,
+    role,
+    user,
+    input_value=None
+):
 
         branch_name = str(input_value or "").strip()
 
+
+    # =====================================
     # RBAC FILTER
+    # =====================================
+
         if role.lower() == "superadmin":
+
             base_filter = {}
+
         else:
+
             base_filter = get_rbac_filter(
             role,
             user,
@@ -1271,36 +1284,130 @@ class BranchEngine:
             self.db
         ) or {}
 
+
         branch = None
 
-    # -------------------------
-    # 1. OBJECTID MATCH
-    # -------------------------
-        if ObjectId.is_valid(branch_name):
-            branch = self.db["branches"].find_one({
-            "$and": [
-                base_filter,
-                {"_id": ObjectId(branch_name)}
-            ]
-        })
 
-    # -------------------------
+    # =====================================
+    # REMOVE UNWANTED FIELDS
+    # =====================================
+
+        projection = {
+        "role": 0,
+        "fullAccess": 0,
+        "subscriptionExpirationDate": 0,
+        "fcmToken": 0,
+        "lastNotifiedDate": 0,
+        "notificationsEnabled": 0,
+        "Notification": 0,
+        "access": 0,
+        "reportEmail": 0,
+        "__v": 0
+    }
+
+
+    # =====================================
+    # 1. OBJECT ID MATCH
+    # =====================================
+
+        if ObjectId.is_valid(branch_name):
+
+            branch = self.db["branches"].find_one(
+            {
+                "$and": [
+                    base_filter,
+                    {
+                        "_id": ObjectId(branch_name)
+                    }
+                ]
+            },
+            projection
+        )
+
+
+    # =====================================
     # 2. NAME MATCH
-    # -------------------------
+    # =====================================
+
         if not branch:
 
-            regex = re.compile(re.escape(branch_name), re.IGNORECASE)
+            regex = re.compile(
+            re.escape(branch_name),
+            re.IGNORECASE
+        )
 
-            branch = self.db["branches"].find_one({
-            "$and": [
-                base_filter,
-                {
-                    "$or": [
-                        {"branchName": regex},
-                        {"name": regex}
-                    ]
-                }
-            ]
-        })
 
-        return branch
+            branch = self.db["branches"].find_one(
+            {
+                "$and": [
+                    base_filter,
+                    {
+                        "$or": [
+                            {
+                                "branchName": regex
+                            },
+                            {
+                                "name": regex
+                            }
+                        ]
+                    }
+                ]
+            },
+            projection
+        )
+
+
+    # =====================================
+    # RETURN RESPONSE
+    # =====================================
+
+        if not branch:
+
+            return {
+            "success": False,
+            "message": "Branch not found"
+        }
+
+
+        return {
+
+        "success": True,
+
+        "branch": {
+
+            "branchId": str(
+                branch.get("_id")
+            ),
+
+            "branchName":
+                branch.get("branchName")
+                or branch.get("name"),
+
+            "schoolId":
+                str(branch.get("schoolId"))
+                if branch.get("schoolId")
+                else None,
+
+            "username":
+                branch.get("username"),
+
+            "password":
+                self.decrypt_password(
+                    branch.get("password")
+                ),
+
+            "email":
+                branch.get("email"),
+
+            "mobileNo":
+                branch.get("mobileNo"),
+
+            "createdAt":
+                branch.get("createdAt"),
+
+            "Active":
+                branch.get("Active")
+
+        }
+
+    }

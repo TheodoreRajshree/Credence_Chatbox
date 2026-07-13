@@ -9910,3 +9910,171 @@ class BranchGroupEngine:
             "error": str(e)
 
         }
+    def get_branchgroup_specific_vehicle_last_position(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user
+):
+
+        try:
+
+    # =====================================
+    # FIND BRANCHGROUP VEHICLE
+    # =====================================
+
+            result = self.get_branchgroup_specific_vehicle(
+            group_id,
+            vehicle_input
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+
+    # =====================================
+    # BRANCH GROUP DETAILS
+    # =====================================
+
+            branch_group = self.db["branchgroups"].find_one({
+            "_id": ObjectId(str(group_id))
+        })
+
+    # =====================================
+    # FIND LAST POSITION
+    # =====================================
+
+            position = self.db["vehiclelastpositions"].find_one(
+
+            {
+
+                "$and": [
+
+                    get_rbac_filter(
+                        role,
+                        user,
+                        "vehiclelastpositions",
+                        self.db
+                    ),
+
+                    {
+                        "uniqueId": str(vehicle["uniqueId"])
+                    }
+
+                ]
+
+            }
+
+        )
+
+            if not position:
+
+                return {
+
+                "success": False,
+
+                "message": "No last position found."
+
+            }
+
+    # =====================================
+    # ADDRESS FALLBACK
+    # =====================================
+
+            address = position.get("address")
+
+            if not address:
+
+                latitude = position.get("latitude")
+                longitude = position.get("longitude")
+
+                if latitude is not None and longitude is not None:
+
+                    address = self.get_address(
+                    latitude,
+                    longitude
+                )
+
+    # =====================================
+    # RESPONSE
+    # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(branch_group["_id"]),
+
+                "branchGroupName": branch_group.get("branchGroupName")
+
+            },
+
+            "vehicle": {
+
+                "deviceId": vehicle.get("deviceId"),
+
+                "vehicleName": vehicle.get("vehicleName"),
+
+                "deviceNumber": vehicle.get("deviceNumber"),
+
+                "uniqueId": vehicle.get("uniqueId"),
+
+                "status": vehicle.get("status"),
+
+                "model": vehicle.get("model"),
+
+                "category": vehicle.get("category"),
+
+                "branchId": vehicle.get("branchId"),
+
+                "schoolId": vehicle.get("schoolId")
+
+            },
+
+            "lastPosition": {
+
+                "latitude": position.get("latitude"),
+
+                "longitude": position.get("longitude"),
+
+                "speed": position.get("speed"),
+
+                "course": position.get("course"),
+
+                "accuracy": position.get("accuracy"),
+
+                "altitude": position.get("altitude"),
+
+                "address": address,
+
+                "protocol": position.get("protocol"),
+
+                "deviceTime": position.get("deviceTime"),
+
+                "fixTime": position.get("fixTime"),
+
+                "serverTime": position.get("serverTime"),
+
+                "lastUpdate": position.get("lastUpdate"),
+
+                "valid": position.get("valid"),
+
+                "outdated": position.get("outdated")
+
+            }
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }

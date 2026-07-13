@@ -4,11 +4,56 @@ import re
 from unique_id import normalize_unique_id
 from datetime import datetime, timedelta, timezone
 import re
+import os
+from dotenv import load_dotenv
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+load_dotenv()
+from report_status_engine import ReportStatusEngine
 class DeviceEngine:
 
     def __init__(self, db):
         self.db = db
+      
+        self.encryption_key = os.getenv("ENCRYPTION_KEY").encode("utf-8")
+        self.iv = os.getenv("IV").encode("utf-8")
+    def decrypt_password(
+    self,
+    encrypted_text
+):
 
+        try:
+
+            if not encrypted_text:
+                return None
+
+            cipher = AES.new(
+
+            self.encryption_key,
+
+            AES.MODE_CBC,
+
+            self.iv
+
+        )
+
+            decrypted = unpad(
+
+            cipher.decrypt(
+                bytes.fromhex(encrypted_text)
+            ),
+
+            AES.block_size
+
+        )
+
+            return decrypted.decode("utf-8")
+
+        except Exception as e:
+
+            print("PASSWORD DECRYPT ERROR :", e)
+
+            return encrypted_text
     # ==========================================
     # FIND DEVICE BY NAME
     # ==========================================
@@ -762,21 +807,24 @@ class DeviceEngine:
 
 
             for group in groups:
+                password = self.decrypt_password(
+                group.get("password")
+            )
 
                 profiles.append({
 
-            "groupId":
-                str(group["_id"]),
+            # "groupId":
+            #     str(group["_id"]),
 
 
             "branchGroupName":
                 group.get("branchGroupName"),
 
 
-            "schoolId":
-                str(group.get("schoolId"))
-                if group.get("schoolId")
-                else None,
+            # "schoolId":
+            #     str(group.get("schoolId"))
+            #     if group.get("schoolId")
+            #     else None,
 
 
             "mobileNo":
@@ -786,29 +834,30 @@ class DeviceEngine:
             "username":
                 group.get("username"),
 
-
-            "email":
-                group.get("email"),
-
-
-            "role":
-                group.get("role"),
+            "password":
+    password,
+            # "email":
+            #     group.get("email"),
 
 
-            "active":
-                group.get("Active"),
+            # "role":
+            #     group.get("role"),
 
 
-            "access":
-                group.get("access"),
+            # "active":
+            #     group.get("Active"),
 
 
-            "notification":
-                group.get("Notification"),
+            # "access":
+            #     group.get("access"),
 
 
-            "fcmToken":
-                group.get("fcmToken"),
+            # "notification":
+            #     group.get("Notification"),
+
+
+            # "fcmToken":
+            #     group.get("fcmToken"),
 
 
             "createdAt":
@@ -830,6 +879,8 @@ class DeviceEngine:
         "profiles": profiles
 
     }
+    
+    
     
     def get_specific_branch_group_profile_1(
     self,
@@ -1012,10 +1063,10 @@ class DeviceEngine:
                 ),
 
 
-            "schoolId":
-                str(branchgroup.get("schoolId"))
-                if branchgroup.get("schoolId")
-                else None,
+            # "schoolId":
+            #     str(branchgroup.get("schoolId"))
+            #     if branchgroup.get("schoolId")
+            #     else None,
 
 
             "username":
@@ -1036,28 +1087,28 @@ class DeviceEngine:
                 ),
 
 
-            "role":
-                branchgroup.get(
-                    "role"
-                ),
+            # "role":
+            #     branchgroup.get(
+            #         "role"
+            #     ),
 
 
-            "active":
-                branchgroup.get(
-                    "Active"
-                ),
+            # "active":
+            #     branchgroup.get(
+            #         "Active"
+            #     ),
 
 
-            "access":
-                branchgroup.get(
-                    "access"
-                ),
+            # "access":
+            #     branchgroup.get(
+            #         "access"
+            #     ),
 
 
-            "notification":
-                branchgroup.get(
-                    "Notification"
-                ),
+            # "notification":
+            #     branchgroup.get(
+            #         "Notification"
+            #     ),
 
 
             "createdAt":

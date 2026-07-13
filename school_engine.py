@@ -2933,16 +2933,26 @@ class SchoolEngine:
 
         }
 
-    def find_specific_school_superadmin(self, role, user, input_value=None):
+    def find_specific_school_superadmin(
+    self,
+    role,
+    user,
+    input_value=None
+):
 
         school_name = str(input_value or "").strip()
 
-    # -------------------------
-    # RBAC FILTER (only non-superadmin)
-    # -------------------------
+
+    # =====================================
+    # RBAC FILTER
+    # =====================================
+
         if role.lower() == "superadmin":
+
             base_filter = {}
+
         else:
+
             base_filter = get_rbac_filter(
             role,
             user,
@@ -2950,36 +2960,146 @@ class SchoolEngine:
             self.db
         ) or {}
 
+
         school = None
 
-    # -------------------------
-    # 1. OBJECTID MATCH
-    # -------------------------
-        if ObjectId.is_valid(school_name):
-            school = self.db["schools"].find_one({
-            "$and": [
-                base_filter,
-                {"_id": ObjectId(school_name)}
-            ]
-        })
 
-    # -------------------------
+    # =====================================
+    # REMOVE UNWANTED FIELDS
+    # =====================================
+
+        projection = {
+
+        "role": 0,
+
+        "fullAccess": 0,
+
+        "subscriptionExpirationDate": 0,
+
+        "fcmToken": 0,
+
+        "lastNotifiedDate": 0,
+
+        "notificationsEnabled": 0,
+
+        "Notification": 0,
+
+        "access": 0,
+
+        "reportEmail": 0,
+
+        "__v": 0
+    }
+
+
+
+    # =====================================
+    # 1. OBJECT ID MATCH
+    # =====================================
+
+        if ObjectId.is_valid(school_name):
+
+            school = self.db["schools"].find_one(
+            {
+                "$and": [
+                    base_filter,
+                    {
+                        "_id": ObjectId(school_name)
+                    }
+                ]
+            },
+            projection
+        )
+
+
+    # =====================================
     # 2. NAME / USERNAME MATCH
-    # -------------------------
+    # =====================================
+
         if not school:
 
-            regex = re.compile(re.escape(school_name), re.IGNORECASE)
+            regex = re.compile(
+            re.escape(school_name),
+            re.IGNORECASE
+        )
 
-            school = self.db["schools"].find_one({
-            "$and": [
-                base_filter,
-                {
-                    "$or": [
-                        {"schoolName": regex},
-                        {"username": regex}
-                    ]
-                }
-            ]
-        })
 
-        return school
+            school = self.db["schools"].find_one(
+            {
+                "$and": [
+                    base_filter,
+                    {
+                        "$or": [
+                            {
+                                "schoolName": regex
+                            },
+                            {
+                                "username": regex
+                            }
+                        ]
+                    }
+                ]
+            },
+            projection
+        )
+
+
+    # =====================================
+    # RESPONSE
+    # =====================================
+
+        if not school:
+
+            return {
+            "success": False,
+            "message": "School not found"
+        }
+
+
+        return {
+
+        "success": True,
+
+        "school": {
+
+            "schoolId": str(
+                school.get("_id")
+            ),
+
+
+            "schoolName":
+                school.get("schoolName"),
+
+
+            "username":
+                school.get("username"),
+
+
+            "password":
+                self.decrypt_password(
+                    school.get("password")
+                ),
+
+
+            "email":
+                school.get("email"),
+
+
+            "mobileNo":
+                school.get("mobileNo"),
+
+
+            "address":
+                school.get("address"),
+
+
+            "createdAt":
+                school.get("createdAt"),
+
+
+            "Active":
+                school.get("Active")
+
+        }
+
+    }
