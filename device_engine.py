@@ -2835,11 +2835,11 @@ class DeviceEngine:
             "branchGroupName"
         ),
 
-        "schoolId": (
-            str(group.get("schoolId"))
-            if group.get("schoolId")
-            else None
-        ),
+        # "schoolId": (
+        #     str(group.get("schoolId"))
+        #     if group.get("schoolId")
+        #     else None
+        # ),
 
         "mobileNo": group.get(
             "mobileNo"
