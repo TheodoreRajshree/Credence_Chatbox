@@ -435,6 +435,7 @@ def execute_predefined_question(
                     "success": False,
                     "message": "Please enter vehicle name or unique ID"
                 }
+                
             if function_name == "get_school_single_branch":
 
                 print("========== DEBUG ==========")
@@ -466,6 +467,23 @@ def execute_predefined_question(
         user
 
     ) 
+            elif function_name == "get_school_all_branch_vehicle_status_reports":
+
+                result = engine_method(
+        role,
+        user
+    )
+            elif function_name == "get_school_specific_branch_vehicle_status":
+
+                branch_name = input_value.get("branch_name")
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+        branch_name,
+        vehicle_input,
+        role,
+        user
+    )
             elif function_name == "get_school_specific_branch_vehicle":
 
                 branch_name = input_value.get("branch_name")

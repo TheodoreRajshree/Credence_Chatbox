@@ -1186,4 +1186,253 @@ class SchoolDeviceEngine:
         "vehicle": self.clean(device)
 
     }
-    
+    from bson import ObjectId
+
+    def get_school_specific_branch_vehicle_status(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+    # =====================================
+    # 1. Logged-in School
+    # =====================================
+        school_id = user.get("schoolId")
+
+        if not school_id:
+            return {
+            "success": False,
+            "message": "School not found."
+        }
+
+        try:
+            school_id = ObjectId(str(school_id))
+        except:
+            return {
+            "success": False,
+            "message": "Invalid School ID."
+        }
+
+        school = self.db["schools"].find_one({
+        "_id": school_id
+    })
+
+        if not school:
+            return {
+            "success": False,
+            "message": "School not found."
+        }
+
+    # =====================================
+    # 2. Find Vehicle from Branch
+    # =====================================
+        result = self.get_school_specific_branch_vehicle(
+        branch_name,
+        vehicle_input,
+        role,
+        user
+    )
+
+        if not result["success"]:
+            return result
+
+        vehicle = result["vehicle"]
+
+    # =====================================
+    # 3. Fetch Status Reports
+    # =====================================
+        reports = list(
+
+        self.db["report_statuses"].find({
+
+            "$and": [
+
+                get_rbac_filter(
+                    role,
+                    user,
+                    "report_statuses",
+                    self.db
+                ),
+
+                {
+                    "uniqueId": {
+                        "$in": self.vehicle_km_engine.normalize_unique_id(
+                            vehicle["uniqueId"]
+                        )
+                    }
+                }
+
+            ]
+
+        })
+
+        .sort("startDateTime", -1)
+
+        .limit(limit)
+
+    )
+
+    # =====================================
+    # 4. Response
+    # =====================================
+        return {
+
+        "success": True,
+
+        "school": {
+            "schoolId": str(school["_id"]),
+            "schoolName": school.get("schoolName"),
+            "username": school.get("username"),
+            "email": school.get("email")
+        },
+
+        "branch": result["branch"],
+
+        "vehicle": {
+            "vehicleName": vehicle.get("vehicleName"),
+            "deviceId": vehicle.get("deviceId"),
+            "uniqueId": vehicle.get("uniqueId"),
+            "status": vehicle.get("status"),
+            "category": vehicle.get("category"),
+            "model": vehicle.get("model")
+        },
+
+        "statusReport": [
+            self.clean(report)
+            for report in reports
+        ]
+    }
+    def get_school_all_branch_vehicle_status_reports(
+    self,
+    role,
+    user,
+    limit=100
+):
+    # =====================================
+    # Logged-in School
+    # =====================================
+        school_id = user.get("schoolId")
+
+        if not school_id:
+            return {
+            "success": False,
+            "message": "School not found."
+        }
+
+        school = self.db["schools"].find_one({
+        "_id": self.convert_id(school_id)
+    })
+
+        if not school:
+            return {
+            "success": False,
+            "message": "School not found."
+        }
+
+    # =====================================
+    # Get all branches of school
+    # =====================================
+        branches = list(
+        self.db["branches"].find({
+            "$or": [
+                {"schoolId": school["_id"]},
+                {"schoolId": str(school["_id"])}
+            ]
+        })
+    )
+
+        if not branches:
+            return {
+            "success": False,
+            "message": "No branches found."
+        }
+
+        branch_ids = []
+
+        for b in branches:
+            branch_ids.append(b["_id"])
+            branch_ids.append(str(b["_id"]))
+
+    # =====================================
+    # Get all vehicles of all branches
+    # =====================================
+        devices = list(
+        self.db["devices"].find({
+            "$and": [
+                get_rbac_filter(
+                    role,
+                    user,
+                    "devices",
+                    self.db
+                ),
+                {
+                    "branchId": {
+                        "$in": branch_ids
+                    }
+                }
+            ]
+        })
+    )
+
+        if not devices:
+            return {
+            "success": False,
+            "message": "No vehicles found."
+        }
+
+        unique_ids = []
+
+        for d in devices:
+            unique_ids.extend(
+            self.vehicle_km_engine.normalize_unique_id(
+                d.get("uniqueId")
+            )
+        )
+
+    # Remove duplicates
+        unique_ids = list(set(unique_ids))
+
+    # =====================================
+    # Fetch Status Reports
+    # =====================================
+        reports = list(
+        self.db["report_statuses"]
+        .find({
+            "$and": [
+                get_rbac_filter(
+                    role,
+                    user,
+                    "report_statuses",
+                    self.db
+                ),
+                {
+                    "uniqueId": {
+                        "$in": unique_ids
+                    }
+                }
+            ]
+        })
+        .sort("startDateTime", -1)
+        .limit(limit)
+    )
+
+    # =====================================
+    # Response
+    # =====================================
+        return {
+        "success": True,
+        "school": {
+            "schoolId": str(school["_id"]),
+            "schoolName": school.get("schoolName")
+        },
+        "totalBranches": len(branches),
+        "totalVehicles": len(devices),
+        "totalReports": len(reports),
+        "statusReports": [
+            self.clean(r)
+            for r in reports
+        ]
+    }

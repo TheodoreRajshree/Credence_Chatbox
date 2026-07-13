@@ -471,6 +471,30 @@ QUESTIONS = {
         "function": "get_school_devices",
         "hidden":True,
       },
+ {
+  "id": 21205005,
+  "question": "Show all branch vehicle status reports",
+  "function": "get_school_all_branch_vehicle_status_reports"
+},
+ {
+  "id": 21205004,
+  "question": "Show status report for a specific branch vehicle",
+  "function": "get_school_specific_branch_vehicle_status",
+  "fields": [
+    {
+      "name": "branch_name",
+      "type": "text",
+      "label": "Enter Branch Name",
+      "placeholder": "Example: Nagpur Branch"
+    },
+    {
+      "name": "vehicle_input",
+      "type": "text",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "Example: MH40CG0301"
+    }
+  ]
+},
   {
     "id": 3,
     "question": "Show school vehicle status report",

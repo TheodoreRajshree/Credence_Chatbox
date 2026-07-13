@@ -421,11 +421,14 @@ def predefined_chat(
 
 # If engine returned failure, return failure directly
         if isinstance(response, dict) and response.get("success") is False:
-            return {
-        "success": False,
-        "ui_type": "auto",
-        "message": response.get("message", "Request failed")
-    }
+
+            raise HTTPException(
+        status_code=404,
+        detail=response.get(
+            "message",
+            "Data not found"
+        )
+    )
 
 # Success 
         return {
@@ -434,11 +437,24 @@ def predefined_chat(
     "data": response
 }
 
+    except HTTPException:
+        raise
+
+
+    except ValueError as e:
+
+        raise HTTPException(
+        status_code=404,
+        detail=str(e)
+    )
+
+
     except Exception as e:
 
-        return {
-            "reply": str(e)
-        }
+        raise HTTPException(
+        status_code=500,
+        detail=str(e)
+    )
 # ==========================
 # START SERVER
 # ==========================

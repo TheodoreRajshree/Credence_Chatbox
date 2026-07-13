@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 load_dotenv()
+from fastapi import HTTPException
+
 from report_status_engine import ReportStatusEngine
 class DeviceEngine:
 
@@ -2798,10 +2800,10 @@ class DeviceEngine:
         # }
         if not branchgroup_input:
 
-            return {
-        "success": False,
-        "message": "Branch group name is required"
-    }
+            raise HTTPException(
+        status_code=400,
+        detail="Branch group name is required"
+    )
 
 
         branchgroup_input = str(branchgroup_input).strip()
@@ -2829,12 +2831,10 @@ class DeviceEngine:
         # }
         if not group:
 
-            return {
-        "success": False,
-        "message": "Branch group not found"
-    }
-
-
+            raise HTTPException(
+        status_code=404,
+        detail="Branch group not found"
+    )
     # ====================================
     # STEP 4: FORMAT PROFILE
     # ====================================

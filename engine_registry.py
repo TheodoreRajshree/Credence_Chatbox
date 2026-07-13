@@ -427,9 +427,10 @@ branch_group_engine.get_branch_group_profile,
 "get_specific_branch_group_profile":
     device_engine.get_specific_branch_group_profile,
 
-
-
-
+"get_school_specific_branch_vehicle_status":
+    school_device_engine.get_school_specific_branch_vehicle_status,
+"get_school_all_branch_vehicle_status_reports":
+    school_device_engine.get_school_all_branch_vehicle_status_reports,
 # =====================
 # DEVICE
 # =====================
