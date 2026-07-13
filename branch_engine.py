@@ -1219,14 +1219,14 @@ class BranchEngine:
                     "Active"
                 ),
 
-                "assignedCompany": (
-                    branch.get(
-                        "access",
-                        {}
-                    ).get(
-                        "assignedCompany"
-                    )
-                ),
+                # "assignedCompany": (
+                #     branch.get(
+                #         "access",
+                #         {}
+                #     ).get(
+                #         "assignedCompany"
+                #     )
+                # ),
 
                 "createdAt": branch.get(
                     "createdAt"

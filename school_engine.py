@@ -2892,14 +2892,14 @@ class SchoolEngine:
                     "Active"
                 ),
 
-                "assignedCompany": (
-                    school.get(
-                        "access",
-                        {}
-                    ).get(
-                        "assignedCompany"
-                    )
-                ),
+                # "assignedCompany": (
+                #     school.get(
+                #         "access",
+                #         {}
+                #     ).get(
+                #         "assignedCompany"
+                #     )
+                # ),
 
                 "createdAt": school.get(
                     "createdAt"
