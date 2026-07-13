@@ -9486,6 +9486,7 @@ class BranchGroupEngine:
             "error": str(e)
 
         }
+    
     def get_branchgroup_school_specific_vehicle_travel_summary(
     self,
     group_id,
@@ -9498,20 +9499,26 @@ class BranchGroupEngine:
         try:
 
     # =====================================
-    # FIND SCHOOL VEHICLE
+    # FIND SCHOOL VEHICLE UNDER BRANCH GROUP
     # =====================================
 
-            result = self.get_branchgroup_school_specific_vehicle(
+            result = self.get_branchgroup_specific_vehicle(
             group_id,
-            vehicle_input,
-            role,
-            user
+            vehicle_input
         )
 
             if not result["success"]:
                 return result
 
             vehicle = result["vehicle"]
+
+    # =====================================
+    # BRANCH GROUP DETAILS
+    # =====================================
+
+            branch_group = self.db["branchgroups"].find_one({
+            "_id": ObjectId(str(group_id))
+        })
 
     # =====================================
     # RBAC FILTER
@@ -9533,19 +9540,25 @@ class BranchGroupEngine:
             self.db["report_travelsummaries"].find(
 
                 {
+
                     "$and": [
 
                         summary_filter,
 
                         {
+
                             "uniqueId": {
+
                                 "$in": self.normalize_unique_id(
                                     vehicle["uniqueId"]
                                 )
+
                             }
+
                         }
 
                     ]
+
                 }
 
             )
@@ -9557,12 +9570,125 @@ class BranchGroupEngine:
         )
 
     # =====================================
-    # GET BRANCH GROUP
+    # RESPONSE
+    # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(branch_group["_id"]),
+
+                "branchGroupName": branch_group.get(
+                    "branchGroupName"
+                )
+
+            },
+
+            "vehicle": vehicle,
+
+            "travelSummary": [
+
+                self.clean(report)
+
+                for report in reports
+
+            ]
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    def get_branchgroup_specific_vehicle_travel_summary(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+    # =====================================
+    # FIND BRANCHGROUP VEHICLE
+    # =====================================
+
+            result = self.get_branchgroup_specific_vehicle(
+            group_id,
+            vehicle_input
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+
+    # =====================================
+    # BRANCH GROUP DETAILS
     # =====================================
 
             branch_group = self.db["branchgroups"].find_one({
             "_id": ObjectId(str(group_id))
         })
+
+    # =====================================
+    # RBAC FILTER
+    # =====================================
+
+            summary_filter = get_rbac_filter(
+            role,
+            user,
+            "report_travelsummaries",
+            self.db
+        )
+
+    # =====================================
+    # FETCH TRAVEL SUMMARY
+    # =====================================
+
+            reports = list(
+
+            self.db["report_travelsummaries"].find(
+
+                {
+
+                    "$and": [
+
+                        summary_filter,
+
+                        {
+
+                            "uniqueId": {
+
+                                "$in": self.normalize_unique_id(
+                                    vehicle["uniqueId"]
+                                )
+
+                            }
+
+                        }
+
+                    ]
+
+                }
+
+            )
+
+            .sort("startTime", -1)
+
+            .limit(limit)
+
+        )
 
     # =====================================
     # RESPONSE
@@ -9590,11 +9716,19 @@ class BranchGroupEngine:
 
                 "uniqueId": vehicle.get("uniqueId"),
 
+                "status": vehicle.get("status"),
+
                 "model": vehicle.get("model"),
+
+                "category": vehicle.get("category"),
+
+                "branchId": vehicle.get("branchId"),
 
                 "schoolId": vehicle.get("schoolId")
 
             },
+
+            "count": len(reports),
 
             "travelSummary": [
 
@@ -9603,6 +9737,168 @@ class BranchGroupEngine:
                 for report in reports
 
             ]
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    def get_branchgroup_school_specific_vehicle_last_position(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user
+):
+
+        try:
+
+    # =====================================
+    # FIND SCHOOL VEHICLE UNDER BRANCHGROUP
+    # =====================================
+
+            result = self.get_branchgroup_school_vehicle(
+            group_id,
+            vehicle_input,
+            role,
+            user
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+            school = result["school"]
+            branch = result["branch"]
+
+    # =====================================
+    # FIND LAST POSITION
+    # =====================================
+
+            position = self.db["vehiclelastpositions"].find_one(
+
+            {
+
+                "$and": [
+
+                    get_rbac_filter(
+                        role,
+                        user,
+                        "vehiclelastpositions",
+                        self.db
+                    ),
+
+                    {
+                        "uniqueId": str(vehicle["uniqueId"])
+                    }
+
+                ]
+
+            }
+
+        )
+
+            if not position:
+
+                return {
+
+                "success": False,
+
+                "message": "No last position found."
+
+            }
+
+    # =====================================
+    # ADDRESS FALLBACK
+    # =====================================
+
+            address = position.get("address")
+
+            if not address:
+
+                latitude = position.get("latitude")
+                longitude = position.get("longitude")
+
+                if latitude is not None and longitude is not None:
+
+                    address = self.get_address(
+                    latitude,
+                    longitude
+                )
+
+    # =====================================
+    # RESPONSE
+    # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(group_id),
+
+                "branchGroupName": user.get("username")
+
+            },
+
+            "school": school,
+
+            "branch": branch,
+
+            "vehicle": {
+
+                "deviceId": vehicle.get("deviceId"),
+
+                "vehicleName": vehicle.get("vehicleName"),
+
+                "deviceNumber": vehicle.get("deviceNumber"),
+
+                "uniqueId": vehicle.get("uniqueId"),
+
+                "model": vehicle.get("model"),
+
+                "category": vehicle.get("category")
+
+            },
+
+            "lastPosition": {
+
+                "latitude": position.get("latitude"),
+
+                "longitude": position.get("longitude"),
+
+                "speed": position.get("speed"),
+
+                "course": position.get("course"),
+
+                "accuracy": position.get("accuracy"),
+
+                "altitude": position.get("altitude"),
+
+                "address": address,
+
+                "protocol": position.get("protocol"),
+
+                "deviceTime": position.get("deviceTime"),
+
+                "fixTime": position.get("fixTime"),
+
+                "serverTime": position.get("serverTime"),
+
+                "lastUpdate": position.get("lastUpdate"),
+
+                "valid": position.get("valid"),
+
+                "outdated": position.get("outdated")
+
+            }
 
         }
 

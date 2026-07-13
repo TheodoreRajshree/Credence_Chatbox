@@ -889,6 +889,44 @@ def execute_predefined_question(
         user
 
     )
+            elif function_name == "get_branchgroup_school_specific_vehicle_last_position":
+
+                vehicle_input = input_value.get(
+        "vehicle_input"
+    )
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_vehicle_travel_summary":
+
+                vehicle_input = input_value.get(
+        "vehicle_input"
+    )
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
             elif function_name == "get_branchgroup_school_specific_vehicle_travel_summary":
 
                 vehicle_input = input_value.get(

@@ -2347,6 +2347,19 @@ QUESTIONS = {
   ]
 },
 {
+  "id": 212032002,
+  "question": "Show travel summary for a specific branch group vehicle",
+  "function": "get_branchgroup_specific_vehicle_travel_summary",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "type": "text",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "Example: MH40CG0301"
+    }
+  ]
+},
+{
     "id": 986555141424,
     "question": "Show branch vehicle last position  report",
     "function": "get_branchgroup_specific_branch_vehicle_last_position",
@@ -2360,6 +2373,19 @@ QUESTIONS = {
             "name":"vehicle_input",
             "label":"Enter Vehicle Name",
             "placeholder":"MH05GA0884"
+        }
+    ]
+},
+{
+    "id": 21203003,
+    "question": "Show last position for a specific school vehicle",
+    "function": "get_branchgroup_school_specific_vehicle_last_position",
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter School Vehicle Name or Number",
+            "placeholder": "Example: MH40CG0301"
         }
     ]
 },
