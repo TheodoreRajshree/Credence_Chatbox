@@ -3103,3 +3103,100 @@ class SchoolEngine:
         }
 
     }
+    def get_school_specific_branch_vehicle_status(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+    # =====================================
+    # 1. Logged-in School
+    # =====================================
+        school_id = user.get("schoolId")
+
+        if not school_id:
+            return {
+            "success": False,
+            "message": "School not found."
+        }
+
+        school = self.db["schools"].find_one({
+        "_id": self._convert_school_id(school_id)
+    })
+
+        if not school:
+            return {
+            "success": False,
+            "message": "School not found."
+        }
+
+    # =====================================
+    # 2. Find Branch Vehicle
+    # =====================================
+        result = self.get_school_specific_branch_vehicle(
+        branch_name,
+        vehicle_input,
+        role,
+        user
+    )
+
+        if not result["success"]:
+            return result
+
+        vehicle = result["vehicle"]
+
+    # =====================================
+    # 3. Fetch Status Reports
+    # =====================================
+        reports = list(
+
+        self.db["report_statuses"].find({
+
+            "$and": [
+
+                get_rbac_filter(
+                    role,
+                    user,
+                    "report_statuses",
+                    self.db
+                ),
+
+                {
+                    "uniqueId": {
+                        "$in": self.vehicle_km_engine.normalize_unique_id(
+                            vehicle["uniqueId"]
+                        )
+                    }
+                }
+
+            ]
+
+        })
+
+        .sort("startDateTime", -1)
+
+        .limit(limit)
+
+    )
+
+    # =====================================
+    # 4. Response
+    # =====================================
+        return {
+
+        "success": True,
+
+        "school": result["school"],
+
+        "branch": result["branch"],
+
+        "vehicle": vehicle,
+
+        "statusReport": [
+            self.clean(report)
+            for report in reports
+        ]
+    }

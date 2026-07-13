@@ -866,5 +866,324 @@ class SchoolDeviceEngine:
             "createdAt": branch.get("createdAt")
 
         }
+    }
+    def get_school_all_branches(
+    self,
+    role,
+    user
+):
+
+    # =====================================
+    # GET SCHOOL ID FROM LOGIN USER
+    # =====================================
+
+        school_id = user.get("schoolId")
+
+        if not school_id:
+            return {
+            "success": False,
+            "message": "School ID not found."
+        }
+
+    # =====================================
+    # FIND SCHOOL
+    # =====================================
+
+        school = self.db["schools"].find_one({
+        "_id": ObjectId(school_id)
+    })
+
+        if not school:
+            return {
+            "success": False,
+            "message": "School not found."
+        }
+
+    # =====================================
+    # RBAC FILTER
+    # =====================================
+
+        branch_filter = get_rbac_filter(
+        role,
+        user,
+        "branches",
+        self.db
+    ) or {}
+
+    # =====================================
+    # GET ALL BRANCHES OF SCHOOL
+    # =====================================
+
+        branches = list(
+        self.db["branches"].find({
+
+            "$and": [
+
+                branch_filter,
+
+                {
+                    "$or": [
+                        {"schoolId": ObjectId(school_id)},
+                        {"schoolId": school_id}
+                    ]
+                }
+
+            ]
+
+        })
+    )
+
+        if not branches:
+            return {
+            "success": False,
+            "message": "No branches found."
+        }
+
+        result = []
+
+        for branch in branches:
+
+            result.append({
+
+            "branchId": str(branch["_id"]),
+            "branchName": branch.get("branchName"),
+            "username": branch.get("username"),
+            "email": branch.get("email"),
+            "mobileNo": branch.get("mobileNo"),
+            "createdAt": branch.get("createdAt")
+
+        })
+
+        return {
+
+        "success": True,
+
+        "school": {
+
+            "schoolId": str(school["_id"]),
+            "schoolName": school.get("schoolName")
+
+        },
+
+        "count": len(result),
+
+        "branches": result
 
     }
+    def get_school_all_branch_devices(
+    self,
+    role,
+    user
+):
+
+    # =====================================
+    # GET SCHOOL ID FROM LOGIN USER
+    # =====================================
+
+        school_id = user.get("schoolId")
+
+        if not school_id:
+            return {
+            "success": False,
+            "message": "School ID not found."
+        }
+
+        school_id_obj = self.convert_id(school_id)
+
+    # =====================================
+    # GET ALL BRANCHES OF SCHOOL
+    # =====================================
+
+        branches = list(
+        self.db["branches"].find({
+            "$or": [
+                {"schoolId": school_id_obj},
+                {"schoolId": str(school_id_obj)}
+            ]
+        })
+    )
+
+        if not branches:
+            return {
+            "success": False,
+            "message": "No branches found for this school."
+        }
+
+        branch_ids = [
+        branch["_id"]
+        for branch in branches
+    ]
+
+    # =====================================
+    # GET ALL DEVICES OF ALL BRANCHES
+    # =====================================
+
+        devices = self.get_allowed_devices(
+
+        role,
+
+        user,
+
+        {
+            "$or": [
+                {
+                    "branchId": {
+                        "$in": branch_ids
+                    }
+                },
+                {
+                    "branchId": {
+                        "$in": [str(i) for i in branch_ids]
+                    }
+                }
+            ]
+        }
+
+    )
+
+    # =====================================
+    # RESPONSE
+    # =====================================
+
+        return {
+
+        "success": True,
+
+        "schoolId": str(school_id),
+
+        "totalBranches": len(branches),
+
+        "totalDevices": len(devices),
+
+        "devices": [
+
+            self.clean(device)
+
+            for device in devices
+
+        ]
+
+    }
+    def get_school_specific_branch_vehicle(
+    self,
+    branch_name,
+    vehicle_input,
+    role,
+    user
+):
+
+    # =====================================
+    # GET LOGIN SCHOOL
+    # =====================================
+
+        school_id = user.get("schoolId")
+
+        if not school_id:
+            return {
+            "success": False,
+            "message": "School not found."
+        }
+
+        school_id = self.convert_id(school_id)
+
+    # =====================================
+    # FIND BRANCH OF LOGIN SCHOOL
+    # =====================================
+
+        regex = re.compile(
+        re.escape(branch_name),
+        re.IGNORECASE
+    )
+
+        branch = self.db["branches"].find_one({
+
+        "$and": [
+
+            {
+                "$or": [
+                    {"schoolId": school_id},
+                    {"schoolId": str(school_id)}
+                ]
+            },
+
+            {
+                "$or": [
+                    {"branchName": regex},
+                    {"username": regex}
+                ]
+            }
+
+        ]
+
+    })
+
+        if not branch:
+            return {
+            "success": False,
+            "message": "Branch not found under this school."
+        }
+
+        branch_id = branch["_id"]
+
+    # =====================================
+    # FIND VEHICLE
+    # =====================================
+
+        regex = re.compile(
+        re.escape(vehicle_input),
+        re.IGNORECASE
+    )
+
+        device = self.db["devices"].find_one({
+
+        "$and": [
+
+            get_rbac_filter(
+                role,
+                user,
+                "devices",
+                self.db
+            ),
+
+            {
+                "$or": [
+                    {"branchId": branch_id},
+                    {"branchId": str(branch_id)}
+                ]
+            },
+
+            {
+                "$or": [
+                    {"vehicleName": regex},
+                    {"name": regex},
+                    {"uniqueId": vehicle_input}
+                ]
+            }
+
+        ]
+
+    })
+
+        if not device:
+            return {
+            "success": False,
+            "message": "Vehicle not found in this branch."
+        }
+
+        return {
+
+        "success": True,
+
+        "school": {
+            "schoolId": str(school_id)
+        },
+
+        "branch": {
+            "branchId": str(branch["_id"]),
+            "branchName": branch.get("branchName")
+        },
+
+        "vehicle": self.clean(device)
+
+    }
+    

@@ -394,7 +394,11 @@ QUESTIONS = {
     "intent": "schools",
     "function": "get_school_profile"
   },
-  
+  {
+  "id": 21001,
+  "question": "Show All Branches",
+  "function": "get_school_all_branches"
+},
  {
     "id": 100,
     "question": "Show branch details",
@@ -436,6 +440,30 @@ QUESTIONS = {
       }
     ]
   },
+  {
+  "id": 21205002,
+  "question": "Show All Branch Vehicles",
+  "function": "get_school_all_branch_devices"
+},
+  {
+  "id": 21205003,
+  "question": "Show Specific Branch Vehicle",
+  "function": "get_school_specific_branch_vehicle",
+  "fields": [
+    {
+      "name": "branch_name",
+      "type": "text",
+      "label": "Enter Branch Name",
+      "placeholder": "Example: Nagpur Branch"
+    },
+    {
+      "name": "vehicle_input",
+      "type": "text",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "Example: MH40CG0301"
+    }
+  ]
+},
  {
         "id": 89,
          "question": "Show school vehicle status report",

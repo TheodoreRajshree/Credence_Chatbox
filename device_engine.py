@@ -2790,12 +2790,18 @@ class DeviceEngine:
         print("========================================")
 
 
+        # if not branchgroup_input:
+
+        #     return {
+        #     # "success": False,
+        #     "message": "Branch group name is required"
+        # }
         if not branchgroup_input:
 
             return {
-            "success": False,
-            "message": "Branch group name is required"
-        }
+        "success": False,
+        "message": "Branch group name is required"
+    }
 
 
         branchgroup_input = str(branchgroup_input).strip()
@@ -2815,12 +2821,18 @@ class DeviceEngine:
     )
 
 
+        # if not group:
+
+        #     return {
+        #     # "success": False,
+        #     "message": "Branch group not found"
+        # }
         if not group:
 
             return {
-            "success": False,
-            "message": "Branch group not found"
-        }
+        "success": False,
+        "message": "Branch group not found"
+    }
 
 
     # ====================================

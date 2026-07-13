@@ -416,10 +416,21 @@ def predefined_chat(
     req.question_id,
     input_value
 )
+
         print("RESPONSE =", response)
+
+# If engine returned failure, return failure directly
+        if isinstance(response, dict) and response.get("success") is False:
+            return {
+        "success": False,
+        "ui_type": "auto",
+        "message": response.get("message", "Request failed")
+    }
+
+# Success 
         return {
     "success": True,
-    "ui_type": "auto",   # we will improve later
+    "ui_type": "auto",
     "data": response
 }
 

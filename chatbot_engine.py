@@ -259,6 +259,12 @@ def execute_engine(engine_method, role, user, message=None):
                 args.append(message.get("vehicle_input"))
             else:
                 args.append(message)
+        elif name == "branch_name":
+
+            if isinstance(message, dict):
+                args.append(message.get("branch_name"))
+            else:
+                args.append(None)
         elif name == "report_date":
 
             if isinstance(message, dict):
@@ -460,7 +466,29 @@ def execute_predefined_question(
         user
 
     ) 
-            
+            elif function_name == "get_school_specific_branch_vehicle":
+
+                branch_name = input_value.get("branch_name")
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+        branch_name,
+        vehicle_input,
+        role,
+        user
+    )
+            elif function_name == "get_school_all_branch_devices":
+
+                result = engine_method(
+        role,
+        user
+    )
+            elif function_name == "get_school_all_branches":
+
+                result = engine_method(
+        role,
+        user
+    )
             elif function_name == "get_branchgroup_school_all_vehicles_1":
 
                 result = engine_method(
@@ -1440,12 +1468,19 @@ def execute_predefined_question(
                 input_value
             )
 
+        result = serialize(result)
+
+# If the engine returned an error, propagate it.
+        if isinstance(result, dict) and result.get("success") is False:
+            result["question"] = question["question"]
+            return result
+
+# Otherwise return success.
         return {
-            "success": True,
-            "question": question["question"],
-            # "function": function_name,
-            "data": serialize(result)
-        }
+    "success": True,
+    "question": question["question"],
+    "data": result
+}
 
     except Exception as e:
 
