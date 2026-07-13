@@ -305,6 +305,8 @@ branch_group_engine.get_branchgroup_specific_branch_vehicles_g,
                                     branch_group_engine.get_branchgroup_school_specific_vehicle_status,
                                     "get_branchgroup_specific_vehicle_status":
                                         branch_group_engine.get_branchgroup_specific_vehicle_status,
+                                        "get_branchgroup_school_specific_vehicle_travel_summary":
+                                            branch_group_engine.get_branchgroup_school_specific_vehicle_travel_summary,
 # =====================
 # BRANCH
 # =====================

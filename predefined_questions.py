@@ -2333,7 +2333,19 @@ QUESTIONS = {
         }
     ]
 },
-
+{
+  "id": 21203001,
+  "question": "Show travel summary for a specific school vehicle",
+  "function": "get_branchgroup_school_specific_vehicle_travel_summary",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "type": "text",
+      "label": "Enter School Vehicle Name or Number",
+      "placeholder": "Example: MH40CG0301"
+    }
+  ]
+},
 {
     "id": 986555141424,
     "question": "Show branch vehicle last position  report",

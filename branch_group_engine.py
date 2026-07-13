@@ -9486,3 +9486,132 @@ class BranchGroupEngine:
             "error": str(e)
 
         }
+    def get_branchgroup_school_specific_vehicle_travel_summary(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+    # =====================================
+    # FIND SCHOOL VEHICLE
+    # =====================================
+
+            result = self.get_branchgroup_school_specific_vehicle(
+            group_id,
+            vehicle_input,
+            role,
+            user
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+
+    # =====================================
+    # RBAC FILTER
+    # =====================================
+
+            summary_filter = get_rbac_filter(
+            role,
+            user,
+            "report_travelsummaries",
+            self.db
+        )
+
+    # =====================================
+    # FETCH TRAVEL SUMMARY
+    # =====================================
+
+            reports = list(
+
+            self.db["report_travelsummaries"].find(
+
+                {
+                    "$and": [
+
+                        summary_filter,
+
+                        {
+                            "uniqueId": {
+                                "$in": self.normalize_unique_id(
+                                    vehicle["uniqueId"]
+                                )
+                            }
+                        }
+
+                    ]
+                }
+
+            )
+
+            .sort("startTime", -1)
+
+            .limit(limit)
+
+        )
+
+    # =====================================
+    # GET BRANCH GROUP
+    # =====================================
+
+            branch_group = self.db["branchgroups"].find_one({
+            "_id": ObjectId(str(group_id))
+        })
+
+    # =====================================
+    # RESPONSE
+    # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(branch_group["_id"]),
+
+                "branchGroupName": branch_group.get("branchGroupName")
+
+            },
+
+            "vehicle": {
+
+                "deviceId": vehicle.get("deviceId"),
+
+                "vehicleName": vehicle.get("vehicleName"),
+
+                "deviceNumber": vehicle.get("deviceNumber"),
+
+                "uniqueId": vehicle.get("uniqueId"),
+
+                "model": vehicle.get("model"),
+
+                "schoolId": vehicle.get("schoolId")
+
+            },
+
+            "travelSummary": [
+
+                self.clean(report)
+
+                for report in reports
+
+            ]
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
