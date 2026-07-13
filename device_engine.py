@@ -2887,5 +2887,129 @@ class DeviceEngine:
         "success": True,
         "profile": profile
     }
+    from datetime import datetime, timedelta
 
+   
 
+    def get_superadmin_vehicle_distance_by_date(
+    self,
+    vehicle_input,
+    report_date,
+    role,
+    user
+):
+
+    # =====================================
+    # ONLY SUPERADMIN
+    # =====================================
+
+        if role.lower() != "superadmin":
+            return {
+            "success": False,
+            "message": "Only Superadmin can access this report."
+        }
+
+    # =====================================
+    # FIND VEHICLE
+    # =====================================
+
+        vehicle = self.find_device(
+        vehicle_input,
+        role,
+        user
+    )
+
+        if not vehicle:
+            return {
+            "success": False,
+            "message": "Vehicle not found."
+        }
+
+        unique_ids = self.normalize_unique_id(
+        vehicle.get("uniqueId")
+    )
+
+    # =====================================
+    # CONVERT DATE (DD-MM-YYYY)
+    # =====================================
+
+        try:
+
+            start_date = datetime.strptime(
+            report_date,
+            "%d-%m-%Y"
+        )
+
+            end_date = start_date + timedelta(days=1)
+
+        except Exception:
+
+            return {
+            "success": False,
+            "message": "Invalid date format. Please use DD-MM-YYYY."
+        }
+
+    # =====================================
+    # FIND REPORT
+    # =====================================
+
+        report = self.db["report_distances"].find_one({
+
+        "uniqueId": {
+            "$in": unique_ids
+        },
+
+        "createdAt": {
+            "$gte": start_date,
+            "$lt": end_date
+        }
+
+    })
+
+        if not report:
+            return {
+            "success": False,
+            "message": f"No KM report found for {report_date}."
+        }
+
+    # =====================================
+    # RESPONSE
+    # =====================================
+
+        return {
+
+        "success": True,
+
+        "vehicle": {
+
+            "vehicleName": (
+                vehicle.get("vehicleName")
+                or vehicle.get("name")
+            ),
+
+            "deviceId": vehicle.get("deviceId"),
+
+            "uniqueId": vehicle.get("uniqueId"),
+
+            "status": vehicle.get("status"),
+
+            "category": vehicle.get("category"),
+
+            "model": vehicle.get("model")
+
+        },
+
+        "distanceReport": {
+
+            "date": report_date,
+
+            "distanceKm": round(
+                float(report.get("distance", 0)),
+                2
+            ),
+
+            "createdAt": report.get("createdAt")
+
+        }
+
+    }

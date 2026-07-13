@@ -251,8 +251,20 @@ def execute_engine(engine_method, role, user, message=None):
             args.append(
                 user.get("username")
             )
+        # elif name == "vehicle_input":
+        #     args.append(message)
         elif name == "vehicle_input":
-            args.append(message)
+
+            if isinstance(message, dict):
+                args.append(message.get("vehicle_input"))
+            else:
+                args.append(message)
+        elif name == "report_date":
+
+            if isinstance(message, dict):
+                args.append(message.get("report_date"))
+            else:
+                args.append(None)
         elif name == "branchgroup_input":
 
             if isinstance(message, dict):
@@ -401,6 +413,7 @@ def execute_predefined_question(
             "get_specific_active_vehicle",
             "get_specific_stopped_vehicle",
            "get_specific_status_report",
+           "get_superadmin_vehicle_distance_by_date",
            
            
          
@@ -671,6 +684,19 @@ def execute_predefined_question(
 
         input_value
 
+
+    )
+            
+            elif function_name == "get_superadmin_vehicle_distance_by_date":
+
+                vehicle_input = input_value.get("vehicle_input")
+                report_date = input_value.get("report_date")
+
+                result = engine_method(
+        vehicle_input,
+        report_date,
+        role,
+        user
     )
             elif function_name == "get_branchgroup_specific_branch_vehicle_status":
 

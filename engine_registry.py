@@ -313,6 +313,8 @@ branch_group_engine.get_branchgroup_specific_branch_vehicles_g,
                                                     branch_group_engine.get_branchgroup_school_specific_vehicle_last_position,
                                                     "get_branchgroup_specific_vehicle_last_position":
                                                         branch_group_engine.get_branchgroup_specific_vehicle_last_position,
+                                                        "get_superadmin_vehicle_distance_by_date":
+                                                            device_engine.get_superadmin_vehicle_distance_by_date,
 # =====================
 # BRANCH
 # =====================
