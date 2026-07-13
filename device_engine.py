@@ -2849,29 +2849,29 @@ class DeviceEngine:
             "username"
         ),
 
-        "email": group.get(
-            "email"
-        ),
+        # "email": group.get(
+        #     "email"
+        # ),
 
-        "role": group.get(
-            "role"
-        ),
+        # "role": group.get(
+        #     "role"
+        # ),
 
-        "active": group.get(
-            "Active"
-        ),
+        # "active": group.get(
+        #     "Active"
+        # ),
 
-        "access": group.get(
-            "access"
-        ),
+        # "access": group.get(
+        #     "access"
+        # ),
 
-        "notification": group.get(
-            "Notification"
-        ),
+        # "notification": group.get(
+        #     "Notification"
+        # ),
 
-        "fcmToken": group.get(
-            "fcmToken"
-        ),
+        # "fcmToken": group.get(
+        #     "fcmToken"
+        # ),
 
         "createdAt": group.get(
             "createdAt"
