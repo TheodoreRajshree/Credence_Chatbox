@@ -3,6 +3,14 @@ from rbac import get_rbac_filter
 from vehicle_km_engine import VehicleKmEngine
 from datetime import datetime, timedelta
 import re
+import re
+import os
+
+from dotenv import load_dotenv
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+load_dotenv()
 from report_status_engine import ReportStatusEngine
 class BranchEngine:
 
@@ -10,7 +18,48 @@ class BranchEngine:
         self.db = db
         self.vehicle_km_engine = VehicleKmEngine(db)
         self.report_status_engine =ReportStatusEngine(db)
-    
+        self.vehicle_km_engine = VehicleKmEngine(db)
+        self.encryption_key = os.getenv("ENCRYPTION_KEY").encode("utf-8")
+        self.iv = os.getenv("IV").encode("utf-8")
+        
+       
+    def decrypt_password(
+    self,
+    encrypted_text
+):
+
+        try:
+
+            if not encrypted_text:
+                return None
+
+            cipher = AES.new(
+
+            self.encryption_key,
+
+            AES.MODE_CBC,
+
+            self.iv
+
+        )
+
+            decrypted = unpad(
+
+            cipher.decrypt(
+                bytes.fromhex(encrypted_text)
+            ),
+
+            AES.block_size
+
+        )
+
+            return decrypted.decode("utf-8")
+
+        except Exception as e:
+
+            print("PASSWORD DECRYPT ERROR :", e)
+
+            return encrypted_text
     # ====================================
     # ID CONVERT
     # ====================================
@@ -1094,21 +1143,120 @@ class BranchEngine:
             for r in reports
     ]
     
-    def find_branch_superadmin(self, role, user):
+    
 
-    # SUPERADMIN → ALL BRANCHES
-            if role.lower() == "superadmin":
-                return list(self.db["branches"].find({}))
+    def find_branch_superadmin(
+    self,
+    role,
+    user
+):
 
-    # OTHER ROLES → RBAC FILTER
-            base_filter = get_rbac_filter(
-        role,
-        user,
-        "branches",
-        self.db
-    ) or {}
+        try:
 
-            return list(self.db["branches"].find(base_filter))
+        # =====================================
+        # ONLY SUPERADMIN
+        # =====================================
+
+            if role.lower() != "superadmin":
+
+                return {
+                "success": False,
+                "message": "Only Superadmin can access all branch profiles."
+            }
+
+            branches = list(
+            self.db["branches"].find()
+        )
+
+            result = []
+
+            for branch in branches:
+
+            # =====================================
+            # DECRYPT PASSWORD
+            # =====================================
+
+                password = self.decrypt_password(
+                branch.get("password")
+            )
+
+                result.append({
+
+                "branchId": str(
+                    branch.get("_id")
+                ),
+
+                "branchName": (
+                    branch.get("branchName")
+                    or branch.get("name")
+                ),
+
+                "username": branch.get(
+                    "username"
+                ),
+
+                "password": password,
+
+                "email": branch.get(
+                    "email"
+                ),
+
+                "mobileNo": branch.get(
+                    "mobileNo"
+                ),
+
+                "schoolId": (
+                    str(branch.get("schoolId"))
+                    if branch.get("schoolId")
+                    else None
+                ),
+
+                "role": branch.get(
+                    "role"
+                ),
+
+                "active": branch.get(
+                    "Active"
+                ),
+
+                "assignedCompany": (
+                    branch.get(
+                        "access",
+                        {}
+                    ).get(
+                        "assignedCompany"
+                    )
+                ),
+
+                "createdAt": branch.get(
+                    "createdAt"
+                ),
+
+                "updatedAt": branch.get(
+                    "updatedAt"
+                )
+
+            })
+
+            return {
+
+            "success": True,
+
+            "count": len(result),
+
+            "branches": result
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
     
     def find_specific_branch_superadmin(self, role, user, input_value=None):
 
