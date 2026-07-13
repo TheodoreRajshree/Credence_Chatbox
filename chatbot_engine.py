@@ -402,6 +402,7 @@ def execute_predefined_question(
             "get_specific_stopped_vehicle",
            "get_specific_status_report",
            
+           
          
             
             
@@ -445,6 +446,19 @@ def execute_predefined_question(
         role,
         user
 
+    ) 
+            
+            elif function_name == "get_branchgroup_school_all_vehicles_1":
+
+                result = engine_method(
+        role,
+        user
+    )
+            elif function_name == "get_branchgroup_all_branch_vehicles":
+
+                result = engine_method(
+        role,
+        user
     )
             elif function_name == "get_specific_stopped_vehicle":
 
@@ -867,6 +881,138 @@ def execute_predefined_question(
                 result = engine_method(
 
         group_id,
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_vehicle_status":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_school_specific_vehicle_status":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_vehicle_distance_report":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_school_specific_vehicle_km_report":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_school_specific_vehicle_distance_report":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_school_vehicle_today_distance":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_school_vehicle_geofences":
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_vehicle_geofences":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
 
         vehicle_input,
 

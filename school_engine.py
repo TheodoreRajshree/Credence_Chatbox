@@ -7,7 +7,15 @@ from vehicle_km_engine import VehicleKmEngine
 from bson import ObjectId
 from datetime import datetime, timedelta, timezone
 import re
+import os
+
+from dotenv import load_dotenv
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+load_dotenv()
 class SchoolEngine:
+
 
     def __init__(self, db):
         self.db = db
@@ -15,6 +23,47 @@ class SchoolEngine:
         self.route_engine =RouteEngine(db)
         self.geofence_report_engine =GeofenceReportEngine (db)
         self.vehicle_km_engine = VehicleKmEngine(db)
+        self.encryption_key = os.getenv("ENCRYPTION_KEY").encode("utf-8")
+        self.iv = os.getenv("IV").encode("utf-8")
+        
+       
+    def decrypt_password(
+    self,
+    encrypted_text
+):
+
+        try:
+
+            if not encrypted_text:
+                return None
+
+            cipher = AES.new(
+
+            self.encryption_key,
+
+            AES.MODE_CBC,
+
+            self.iv
+
+        )
+
+            decrypted = unpad(
+
+            cipher.decrypt(
+                bytes.fromhex(encrypted_text)
+            ),
+
+            AES.block_size
+
+        )
+
+            return decrypted.decode("utf-8")
+
+        except Exception as e:
+
+            print("PASSWORD DECRYPT ERROR :", e)
+
+            return encrypted_text
     def _convert_school_id(self, school_id):
 
         if not school_id:
@@ -28,6 +77,10 @@ class SchoolEngine:
 
         except Exception:
             return school_id
+    
+   
+
+    
     def normalize_unique_id(self, uid):
 
         ids = []
@@ -2769,31 +2822,116 @@ class SchoolEngine:
         "branches": branch_list
     }
     # def find_school_superadmin(self, school_name, role, user):
-    def find_school_superadmin(self, role, user, school_name=None):
+    # def find_school_superadmin(self, role, user, school_name=None):
 
-    # -------------------------
-    # SUPERADMIN → ALL SCHOOLS
-    # -------------------------
-        if role.lower() == "superadmin":
+    
+    def find_school_superadmin(
+    self,
+    role,
+    user
+):
 
-            schools = list(self.db["schools"].find({}))
+        try:
 
-            return schools
+        # =====================================
+        # ONLY SUPERADMIN
+        # =====================================
 
-    # -------------------------
-    # OTHER ROLES → RBAC FILTER
-    # -------------------------
-        base_filter = get_rbac_filter(
-        role,
-        user,
-        "schools",
-        self.db
-    ) or {}
+            if role.lower() != "superadmin":
 
-        schools = list(self.db["schools"].find(base_filter))
+                return {
+                "success": False,
+                "message": "Only Superadmin can access all school profiles."
+            }
 
-        return schools
-   
+            schools = list(
+            self.db["schools"].find()
+        )
+
+            result = []
+
+            for school in schools:
+
+            # =====================================
+            # DECRYPT PASSWORD
+            # =====================================
+
+                password = self.decrypt_password(
+                school.get("password")
+            )
+
+                result.append({
+
+                "schoolId": str(
+                    school.get("_id")
+                ),
+
+                "schoolName": school.get(
+                    "schoolName"
+                ),
+
+                "username": school.get(
+                    "username"
+                ),
+
+                "password": password,
+
+                "email": school.get(
+                    "email"
+                ),
+
+                "mobileNo": school.get(
+                    "mobileNo"
+                ),
+
+                "role": school.get(
+                    "role"
+                ),
+
+                "active": school.get(
+                    "Active"
+                ),
+
+                "assignedCompany": (
+                    school.get(
+                        "access",
+                        {}
+                    ).get(
+                        "assignedCompany"
+                    )
+                ),
+
+                "createdAt": school.get(
+                    "createdAt"
+                ),
+
+                "updatedAt": school.get(
+                    "updatedAt"
+                )
+
+            })
+
+            return {
+
+            "success": True,
+
+            "count": len(result),
+
+            "schools": result
+
+        }
+
+        except Exception as e:
+
+            print("ERROR :", e)
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
 
     def find_specific_school_superadmin(self, role, user, input_value=None):
 

@@ -322,6 +322,8 @@ class DeviceEngine:
                 matched.append({
 
                 "deviceId": str(device["_id"]),
+                
+                
                 "vehicleName": device.get("name"),
                 "uniqueId": device.get("uniqueId"),
                 "sim": device.get("sim"),

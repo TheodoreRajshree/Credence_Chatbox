@@ -3839,6 +3839,202 @@ class BranchGroupEngine:
             "success": False,
             "error": str(e)
         }
+   
+    
+
+    def get_branchgroup_branch_vehicles_1(
+    self,
+    role,
+    user
+):
+
+        try:
+
+        # ===============================
+        # GET GROUP ID
+        # ===============================
+            group_id = user.get("groupId") or user.get("_id")
+
+            if not group_id:
+                return {
+                "success": False,
+                "message": "Branch Group ID not found."
+            }
+
+            branch_group = self.db["branchgroups"].find_one({
+            "_id": ObjectId(str(group_id))
+        })
+
+            if not branch_group:
+                return {
+                "success": False,
+                "message": "Branch Group not found."
+            }
+
+        # ===============================
+        # GET ASSIGNED BRANCHES
+        # ===============================
+            branch_ids = []
+
+            for branch_id in branch_group.get("AssignedBranch", []):
+                try:
+                    branch_ids.append(ObjectId(str(branch_id)))
+                except:
+                    pass
+
+            if not branch_ids:
+                return {
+                "success": False,
+                "message": "No branches assigned."
+            }
+
+        # ===============================
+        # GET ALL BRANCHES
+        # ===============================
+            branches = {
+            branch["_id"]: branch
+            for branch in self.db["branches"].find({
+                "_id": {"$in": branch_ids}
+            })
+        }
+
+        # ===============================
+        # GET ALL VEHICLES
+        # ===============================
+            vehicles = self.db["devices"].find({
+            "branchId": {"$in": branch_ids}
+        })
+
+            data = []
+
+            for vehicle in vehicles:
+
+                branch = branches.get(vehicle.get("branchId"))
+
+                data.append({
+
+                "deviceId": str(vehicle["_id"]),
+                "vehicleName": vehicle.get("name"),
+                "uniqueId": vehicle.get("uniqueId"),
+                "deviceNumber": vehicle.get("deviceId"),
+                "status": vehicle.get("status"),
+                "model": vehicle.get("model"),
+                "category": vehicle.get("category"),
+                "speed": vehicle.get("speed"),
+                "average": vehicle.get("average"),
+                "sim": vehicle.get("sim"),
+                "installationDate": vehicle.get("installationdate"),
+                "expirationDate": vehicle.get("expirationdate"),
+
+                "branchId": str(vehicle.get("branchId")),
+                "branchName": branch.get("branchName") if branch else None
+            })
+
+            return {
+            "success": True,
+            "totalVehicles": len(data),
+            "vehicles": data
+        }
+
+        except Exception as e:
+
+            return {
+            "success": False,
+            "error": str(e)
+        }
+    from bson import ObjectId
+
+    def get_branchgroup_school_all_vehicles_1(
+    self,
+    role,
+    user
+):
+
+        try:
+
+        # ===============================
+        # GET SCHOOL ID
+        # ===============================
+            school_id = user.get("schoolId")
+
+            if not school_id:
+                return {
+                "success": False,
+                "message": "School ID not found."
+            }
+
+            school_id = ObjectId(str(school_id))
+
+        # ===============================
+        # GET SCHOOL
+        # ===============================
+            school = self.db["schools"].find_one({
+            "_id": school_id
+        })
+
+            if not school:
+                return {
+                "success": False,
+                "message": "School not found."
+            }
+
+        # ===============================
+        # GET BRANCHES
+        # ===============================
+            branches = {
+            branch["_id"]: branch
+            for branch in self.db["branches"].find({
+                "schoolId": school_id
+            })
+        }
+
+        # ===============================
+        # GET ALL SCHOOL VEHICLES
+        # ===============================
+            vehicles = self.db["devices"].find({
+            "schoolId": school_id
+        })
+
+            data = []
+
+            for vehicle in vehicles:
+
+                branch = branches.get(vehicle.get("branchId"))
+
+                data.append({
+
+                "deviceId": str(vehicle["_id"]),
+                "vehicleName": vehicle.get("name"),
+                "uniqueId": vehicle.get("uniqueId"),
+                "deviceNumber": vehicle.get("deviceId"),
+                "status": vehicle.get("status"),
+                "model": vehicle.get("model"),
+                "category": vehicle.get("category"),
+                "speed": vehicle.get("speed"),
+                "average": vehicle.get("average"),
+                "sim": vehicle.get("sim"),
+                "installationDate": vehicle.get("installationdate"),
+                "expirationDate": vehicle.get("expirationdate"),
+
+                "schoolId": str(vehicle.get("schoolId")),
+                "schoolName": school.get("schoolName"),
+
+                "branchId": str(vehicle.get("branchId")) if vehicle.get("branchId") else None,
+                "branchName": branch.get("branchName") if branch else None
+            })
+
+            return {
+            "success": True,
+            "totalVehicles": len(data),
+            "vehicles": data
+        }
+
+        except Exception as e:
+
+            return {
+            "success": False,
+            "error": str(e)
+        }
     def get_branchgroup_school_vehicle(
     self,
     vehicle_input,
@@ -7793,5 +7989,1500 @@ class BranchGroupEngine:
             "success":False,
 
             "error":str(e)
+
+        }
+    from bson import ObjectId
+   
+    
+
+    def get_branchgroup_specific_vehicle_geofences(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user
+):
+
+        try:
+
+        # =====================================
+        # GET GROUP ID
+        # =====================================
+
+            if not group_id:
+                group_id = (
+                user.get("groupId")
+                or user.get("branchGroupId")
+                or user.get("_id")
+            )
+
+            try:
+                group_id = ObjectId(str(group_id))
+            except:
+                return {
+                "success": False,
+                "message": "Invalid Branch Group ID"
+            }
+
+        # =====================================
+        # CLEAN INPUT
+        # =====================================
+
+            if isinstance(vehicle_input, dict):
+
+                vehicle_input = (
+                vehicle_input.get("vehicle_input")
+                or vehicle_input.get("vehicle")
+                or vehicle_input.get("vehicle_name")
+            )
+
+            vehicle_input = str(vehicle_input).strip()
+
+            if not vehicle_input:
+                return {
+                "success": False,
+                "message": "Vehicle name is required."
+            }
+
+        # =====================================
+        # FIND BRANCH GROUP
+        # =====================================
+
+            group = self.db["branchgroups"].find_one(
+            {"_id": group_id}
+        )
+
+            if not group:
+                return {
+                "success": False,
+                "message": "Branch Group not found."
+            }
+
+            assigned_branches = group.get("AssignedBranch", [])
+
+            if not assigned_branches:
+                return {
+                "success": False,
+                "message": "No branches assigned."
+            }
+
+        # =====================================
+        # CONVERT BRANCH IDS
+        # =====================================
+
+            branch_ids = []
+
+            for b in assigned_branches:
+                try:
+                    branch_ids.append(ObjectId(str(b)))
+                except:
+                    pass
+
+        # =====================================
+        # FIND VEHICLE
+        # =====================================
+
+            vehicle = self.db["devices"].find_one({
+
+            "branchId": {
+                "$in": branch_ids
+            },
+
+            "$or": [
+
+                {
+                    "name": {
+                        "$regex": vehicle_input,
+                        "$options": "i"
+                    }
+                },
+
+                {
+                    "deviceId": {
+                        "$regex": vehicle_input,
+                        "$options": "i"
+                    }
+                },
+
+                {
+                    "uniqueId": {
+                        "$regex": vehicle_input,
+                        "$options": "i"
+                    }
+                }
+
+            ]
+
+        })
+
+            if not vehicle:
+                return {
+                "success": False,
+                "message": "Vehicle not found in your Branch Group."
+            }
+
+        # =====================================
+        # GET UNIQUE ID
+        # =====================================
+
+            unique_id = vehicle.get("uniqueId")
+
+        # =====================================
+        # FIND GEOFENCES
+        # =====================================
+
+            geofences = list(
+
+            self.db["geofences"].find({
+
+                "$or": [
+
+                    {
+                        "uniqueId": unique_id
+                    },
+
+                    {
+                        "uniqueId": str(unique_id)
+                    }
+
+                ]
+
+            }).sort("createdAt", -1)
+
+        )
+
+        # =====================================
+        # FORMAT RESULT
+        # =====================================
+
+            result = []
+
+            for geo in geofences:
+
+                result.append({
+
+                "geofenceId": str(geo["_id"]),
+
+                "geofenceName": geo.get("geofenceName") or geo.get("name"),
+
+                "address": geo.get("address"),
+
+                "description": geo.get("description"),
+
+                "schoolId": str(geo.get("schoolId")) if geo.get("schoolId") else None,
+
+                "branchId": str(geo.get("branchId")) if geo.get("branchId") else None,
+
+                "coordinates": geo.get("coordinates"),
+
+                "type": geo.get("type"),
+
+                "active": geo.get("Active")
+
+            })
+
+        # =====================================
+        # RESPONSE
+        # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(group["_id"]),
+
+                "branchGroupName": group.get("branchGroupName")
+
+            },
+
+            "vehicle": {
+
+                "deviceId": str(vehicle["_id"]),
+
+                "vehicleName": vehicle.get("name"),
+
+                "deviceNumber": vehicle.get("deviceId"),
+
+                "uniqueId": str(vehicle.get("uniqueId")),
+
+                "branchId": str(vehicle.get("branchId")) if vehicle.get("branchId") else None
+
+            },
+
+            "count": len(result),
+
+            "geofences": result
+
+        }
+
+        except Exception as e:
+
+            return {
+            "success": False,
+            "error": str(e)
+        }
+    from bson import ObjectId
+
+    def get_branchgroup_school_vehicle_geofences(
+    self,
+    group_id,
+    role,
+    user
+):
+
+        try:
+
+        # =====================================
+        # GROUP ID
+        # =====================================
+
+            if not group_id:
+                group_id = (
+                user.get("groupId")
+                or user.get("branchGroupId")
+                or user.get("_id")
+            )
+
+            try:
+                group_id = ObjectId(str(group_id))
+            except:
+                pass
+
+        # =====================================
+        # FIND BRANCH GROUP
+        # =====================================
+
+            branch_group = self.db.branchgroups.find_one({
+            "_id": group_id
+        })
+
+            if not branch_group:
+                return {
+                "success": False,
+                "message": "Branch group not found."
+            }
+
+            assigned_branches = branch_group.get("AssignedBranch", [])
+
+            if not assigned_branches:
+                return {
+                "success": False,
+                "message": "No branches assigned."
+            }
+
+        # =====================================
+        # CONVERT BRANCH IDS
+        # =====================================
+
+            branch_ids = []
+
+            for b in assigned_branches:
+                try:
+                    branch_ids.append(ObjectId(str(b)))
+                except:
+                    pass
+
+        # =====================================
+        # RBAC
+        # =====================================
+
+            device_filter = get_rbac_filter(
+            role,
+            user,
+            "devices",
+            self.db
+        )
+
+            if device_filter.get("_id") is None:
+                device_filter = {}
+
+        # =====================================
+        # FIND DEVICES
+        # =====================================
+
+            device_query = {
+
+            "$and": [
+
+                {
+
+                    "$or": [
+
+                        {
+                            "branchId": {
+                                "$in": branch_ids
+                            }
+                        },
+
+                        {
+                            "branchId": {
+                                "$in": [str(x) for x in branch_ids]
+                            }
+                        }
+
+                    ]
+
+                }
+
+            ]
+
+        }
+
+            if device_filter:
+                device_query["$and"].append(device_filter)
+
+            devices = list(
+            self.db.devices.find(device_query)
+        )
+
+            result = []
+
+        # =====================================
+        # DEVICE LOOP
+        # =====================================
+
+            for device in devices:
+
+                route = self.db.routes.find_one({
+
+                "$or": [
+
+                    {
+                        "deviceObjId": device["_id"]
+                    },
+
+                    {
+                        "deviceObjId": str(device["_id"])
+                    }
+
+                ]
+
+            })
+
+                if not route:
+                    continue
+
+                geofence = self.db.geofences.find_one({
+
+                "$or": [
+
+                    {
+                        "routeObjId": route["_id"]
+                    },
+
+                    {
+                        "routeObjId": str(route["_id"])
+                    }
+
+                ]
+
+            })
+
+                if not geofence:
+                    continue
+
+                result.append({
+
+                "vehicle": {
+
+                    "deviceId": str(device["_id"]),
+
+                    "vehicleName": (
+                        device.get("vehicleNumber")
+                        or device.get("vehicle_name")
+                        or device.get("name")
+                    ),
+
+                    "uniqueId": device.get("uniqueId")
+
+                },
+
+                "route": {
+
+                    "routeId": str(route["_id"]),
+
+                    "routeNumber": route.get("routeNumber")
+
+                },
+
+                "geofence": self.clean(geofence)
+
+            })
+
+        # =====================================
+        # RESPONSE
+        # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(branch_group["_id"]),
+
+                "branchGroupName": branch_group.get("branchGroupName")
+
+            },
+
+            "count": len(result),
+
+            "vehicles": result
+
+        }
+
+        except Exception as e:
+
+            print("ERROR =", e)
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    from datetime import datetime, timedelta, timezone
+
+    def get_branchgroup_school_vehicle_today_distance(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user
+):
+
+        try:
+
+        # =====================================
+        # FIND SCHOOL VEHICLE UNDER BRANCH GROUP
+        # =====================================
+
+            result = self.get_branchgroup_specific_vehicle(
+            group_id,
+            vehicle_input
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+
+            unique_ids = self.normalize_unique_id(
+            vehicle["uniqueId"]
+        )
+
+        # =====================================
+        # TODAY (IST)
+        # =====================================
+
+            IST = timezone(timedelta(hours=5, minutes=30))
+
+            now = datetime.now(IST)
+
+            today_start = now.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0
+        )
+
+            today_end = now.replace(
+            hour=23,
+            minute=59,
+            second=59,
+            microsecond=999999
+        )
+
+        # =====================================
+        # HISTORY PIPELINE
+        # =====================================
+
+            pipeline = [
+
+            {
+                "$match": {
+
+                    "$and": [
+
+                        get_rbac_filter(
+                            role,
+                            user,
+                            "histories",
+                            self.db
+                        ),
+
+                        {
+                            "uniqueId": {
+                                "$in": unique_ids
+                            }
+                        },
+
+                        {
+                            "attributes.totalDistance": {
+                                "$ne": None
+                            }
+                        },
+
+                        {
+                            "createdAt": {
+                                "$gte": today_start,
+                                "$lte": today_end
+                            }
+                        }
+
+                    ]
+
+                }
+
+            },
+
+            {
+                "$sort": {
+                    "createdAt": 1
+                }
+            },
+
+            {
+                "$project": {
+
+                    "_id": 0,
+
+                    "vehicleName": "$name",
+
+                    "createdAt": 1,
+
+                    "totalDistanceKm": {
+
+                        "$divide": [
+
+                            "$attributes.totalDistance",
+
+                            1000
+
+                        ]
+
+                    }
+
+                }
+
+            },
+
+            {
+                "$group": {
+
+                    "_id": None,
+
+                    "vehicleName": {
+                        "$first": "$vehicleName"
+                    },
+
+                    "startDistance": {
+                        "$first": "$totalDistanceKm"
+                    },
+
+                    "endDistance": {
+                        "$last": "$totalDistanceKm"
+                    },
+
+                    "firstRecord": {
+                        "$first": "$createdAt"
+                    },
+
+                    "lastRecord": {
+                        "$last": "$createdAt"
+                    }
+
+                }
+
+            },
+
+            {
+                "$project": {
+
+                    "_id": 0,
+
+                    "vehicleName": 1,
+
+                    "firstRecord": 1,
+
+                    "lastRecord": 1,
+
+                    "todayDistance": {
+
+                        "$round": [
+
+                            {
+
+                                "$subtract": [
+
+                                    "$endDistance",
+
+                                    "$startDistance"
+
+                                ]
+
+                            },
+
+                            2
+
+                        ]
+
+                    }
+
+                }
+
+            }
+
+        ]
+
+            report = list(
+            self.db.histories.aggregate(pipeline)
+        )
+
+            if not report:
+
+                return {
+
+                "success": False,
+
+                "message": "No history found for today."
+
+            }
+
+            report = report[0]
+
+        # =====================================
+        # RESPONSE
+        # =====================================
+
+            return {
+
+            "success": True,
+
+            "vehicle": {
+
+                "deviceId": vehicle.get("deviceId"),
+
+                "vehicleName": vehicle.get("vehicleName"),
+
+                "uniqueId": vehicle.get("uniqueId")
+
+            },
+
+            "todayDistance": {
+
+                "date": now.strftime("%Y-%m-%d"),
+
+                "distanceKm": report["todayDistance"],
+
+                "firstRecord": report["firstRecord"],
+
+                "lastRecord": report["lastRecord"]
+
+            }
+
+        }
+
+        except Exception as e:
+
+            print(e)
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    def clean(self, doc):
+
+        if not doc:
+            return doc
+
+        result = {}
+
+        for k, v in doc.items():
+
+            if isinstance(v, ObjectId):
+                result[k] = str(v)
+
+            elif isinstance(v, dict):
+                result[k] = self.clean(v)
+
+            elif isinstance(v, list):
+                result[k] = [
+                    self.clean(item) if isinstance(item, dict) else item
+                    for item in v
+            ]
+
+            else:
+                result[k] = v
+
+    # ==========================================
+    # Populate School
+    # ==========================================
+
+        school_id = doc.get("schoolId")
+
+        if school_id:
+
+            try:
+
+                if isinstance(school_id, str):
+                    school_id = ObjectId(school_id)
+
+                school = self.db["schools"].find_one(
+                {"_id": school_id},
+                {"name": 1}
+            )
+
+                if school:
+                    result["schoolName"] = school.get("name")
+
+            except:
+                pass
+
+    # ==========================================
+    # Populate Branch
+    # ==========================================
+
+        branch_id = doc.get("branchId")
+
+        if branch_id:
+
+            try:
+
+                if isinstance(branch_id, str):
+                    branch_id = ObjectId(branch_id)
+
+                branch = self.db["branches"].find_one(
+                {"_id": branch_id},
+                {"name": 1}
+            )
+
+                if branch:
+                    result["branchName"] = branch.get("name")
+
+            except:
+                pass
+
+        return result
+    def get_branchgroup_school_specific_vehicle_distance_report(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+        # ===============================
+        # FIND SCHOOL VEHICLE
+        # ===============================
+
+            result = self.get_branchgroup_specific_vehicle(
+            group_id,
+            vehicle_input
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+
+        # ===============================
+        # UNIQUE IDS
+        # ===============================
+
+            unique_ids = self.normalize_unique_id(
+            vehicle.get("uniqueId")
+        )
+
+            print("REPORT UNIQUE IDS =", unique_ids)
+
+        # ===============================
+        # RBAC FILTER
+        # ===============================
+
+            report_filter = get_rbac_filter(
+            role,
+            user,
+            "report_distances",
+            self.db
+        )
+
+        # ===============================
+        # GET REPORTS
+        # ===============================
+
+            reports = list(
+
+            self.db["report_distances"].find(
+
+                {
+
+                    "$and": [
+
+                        report_filter,
+
+                        {
+                            "uniqueId": {
+                                "$in": unique_ids
+                            }
+                        }
+
+                    ]
+
+                }
+
+            )
+
+            .sort("createdAt", -1)
+
+            .limit(limit)
+
+        )
+
+            print("DISTANCE REPORT COUNT =", len(reports))
+
+        # ===============================
+        # BRANCH GROUP DETAILS
+        # ===============================
+
+            branch_group = self.db["branchgroups"].find_one({
+            "_id": ObjectId(str(group_id))
+        })
+
+        # ===============================
+        # RESPONSE
+        # ===============================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(branch_group["_id"]),
+
+                "branchGroupName": branch_group.get("branchGroupName")
+
+            },
+
+            "vehicle": vehicle,
+
+            "reports": [
+
+                self.clean(report)
+
+                for report in reports
+
+            ]
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    def get_branchgroup_school_specific_vehicle_km_report(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user
+):
+
+    # =====================================
+    # GET SCHOOL VEHICLE UNDER BRANCH GROUP
+    # =====================================
+
+        result = self.get_branchgroup_specific_vehicle(
+        group_id,
+        vehicle_input
+    )
+
+        if not result["success"]:
+            return result
+
+        vehicle = result["vehicle"]
+
+        unique_ids = self.normalize_unique_id(
+        vehicle["uniqueId"]
+    )
+
+    # =====================================
+    # FETCH REPORT DISTANCES
+    # =====================================
+
+        report_distances = list(
+
+        self.db["report_distances"]
+
+        .find({
+
+            "$and":[
+
+                get_rbac_filter(
+                    role,
+                    user,
+                    "report_distances",
+                    self.db
+                ),
+
+                {
+                    "uniqueId":{
+                        "$in":unique_ids
+                    }
+                }
+
+            ]
+
+        })
+
+        .sort("createdAt",-1)
+
+    )
+
+        if not report_distances:
+
+            return {
+            "success":False,
+            "message":"No distance reports found as the device is inactive."
+        }
+
+    # =====================================
+    # BUILD REPORT MAP
+    # =====================================
+
+        report_map = {
+
+        r["createdAt"].date():
+        float(r.get("distance",0))
+
+            for r in report_distances
+
+    }
+
+        today = datetime.utcnow().date()
+
+        available_dates = sorted(report_map.keys())
+
+    # =====================================
+    # ACTIVE / INACTIVE
+    # =====================================
+
+        if today in report_map:
+
+            status = "active"
+
+            analysis_base_date = today
+
+            message = "Vehicle is active today."
+
+        else:
+
+            status = "inactive"
+
+            analysis_base_date = available_dates[-1]
+
+            message = (
+            f"Vehicle is not active today. "
+            f"Last active was on {analysis_base_date}"
+        )
+
+        current_km = round(
+        report_map.get(
+            analysis_base_date,
+            0
+        ),
+        2
+    )
+
+        previous_active_date = None
+
+        for d in reversed(available_dates):
+
+            if d < analysis_base_date:
+
+                previous_active_date = d
+
+                break
+
+        yesterday_km = round(
+
+            report_map.get(
+            previous_active_date,
+            0
+        ),
+
+        2
+
+    ) if previous_active_date else 0
+
+    # =====================================
+    # WEEK
+    # =====================================
+
+        week_start = analysis_base_date - timedelta(
+        days=analysis_base_date.weekday()
+    )
+
+        week_end = week_start + timedelta(days=6)
+
+        week_total = 0
+
+        for r in report_distances:
+
+            d = r["createdAt"].date()
+
+            if week_start <= d <= week_end:
+
+                week_total += float(
+                r.get("distance",0)
+            )
+
+        week_total = round(week_total,2)
+
+    # =====================================
+    # MONTH
+    # =====================================
+
+        month_start = analysis_base_date - timedelta(days=29)
+
+        month_end = analysis_base_date
+
+        month_total = 0
+
+        for r in report_distances:
+
+            d = r["createdAt"].date()
+
+            if month_start <= d <= month_end:
+
+                month_total += float(
+                r.get("distance",0)
+            )
+
+        month_total = round(month_total,2)
+
+    # =====================================
+    # BRANCH GROUP DETAILS
+    # =====================================
+
+        branch_group = self.db["branchgroups"].find_one({
+
+        "_id": ObjectId(str(group_id))
+
+    })
+
+    # =====================================
+    # RESPONSE
+    # =====================================
+
+        return {
+
+        "success":True,
+
+        "status":status,
+
+        "message":message,
+
+        "branchGroup":{
+
+            "groupId":str(branch_group["_id"]),
+
+            "branchGroupName":
+                branch_group.get("branchGroupName")
+
+        },
+
+        "vehicle":{
+
+            "vehicleName":
+                vehicle.get("vehicleName"),
+
+            "deviceId":
+                vehicle.get("deviceId"),
+
+            "uniqueId":
+                vehicle.get("uniqueId"),
+
+            "status":
+                vehicle.get("status"),
+
+            "category":
+                vehicle.get("category"),
+
+            "model":
+                vehicle.get("model")
+
+        },
+
+        "reference":{
+
+            "date":
+                analysis_base_date.strftime("%Y-%m-%d"),
+
+            "isTodayActive":
+                status=="active",
+
+            "lastActiveDate":
+                analysis_base_date.strftime("%Y-%m-%d")
+
+        },
+
+        "distanceReport":{
+
+            "current":{
+
+                "label":
+                    "Today"
+                    if status=="active"
+                    else "Last Active",
+
+                "km":
+                    current_km
+
+            },
+
+            "yesterday":{
+
+                "date":
+                    previous_active_date.strftime("%Y-%m-%d")
+                    if previous_active_date
+                    else None,
+
+                "km":
+                    yesterday_km
+
+            },
+
+            "week":{
+
+                "from":
+                    week_start.strftime("%Y-%m-%d"),
+
+                "to":
+                    week_end.strftime("%Y-%m-%d"),
+
+                "totalKm":
+                    week_total
+
+            },
+
+            "month":{
+
+                "type":"rolling_30_days",
+
+                "from":
+                    month_start.strftime("%Y-%m-%d"),
+
+                "to":
+                    month_end.strftime("%Y-%m-%d"),
+
+                "totalKm":
+                    month_total
+
+            }
+
+        }
+
+    }
+    def get_branchgroup_specific_vehicle_distance_report(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+        # ===============================
+        # FIND VEHICLE
+        # ===============================
+
+            result = self.get_branchgroup_specific_vehicle(
+            group_id,
+            vehicle_input
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+
+        # ===============================
+        # UNIQUE IDS
+        # ===============================
+
+            unique_ids = self.normalize_unique_id(
+            vehicle.get("uniqueId")
+        )
+
+            print("REPORT UNIQUE IDS =", unique_ids)
+
+        # ===============================
+        # RBAC FILTER
+        # ===============================
+
+            report_filter = get_rbac_filter(
+            role,
+            user,
+            "report_distances",
+            self.db
+        )
+
+        # ===============================
+        # GET REPORTS
+        # ===============================
+
+            reports = list(
+
+            self.db["report_distances"]
+
+            .find({
+
+                "$and": [
+
+                    report_filter,
+
+                    {
+                        "uniqueId": {
+                            "$in": unique_ids
+                        }
+                    }
+
+                ]
+
+            })
+
+            .sort("createdAt", -1)
+
+            .limit(limit)
+
+        )
+
+            print("DISTANCE REPORT COUNT =", len(reports))
+
+        # ===============================
+        # BRANCH GROUP DETAILS
+        # ===============================
+
+            branch_group = self.db["branchgroups"].find_one({
+            "_id": ObjectId(str(group_id))
+        })
+
+        # ===============================
+        # RESPONSE
+        # ===============================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(branch_group["_id"]),
+
+                "branchGroupName": branch_group.get("branchGroupName")
+
+            },
+
+            "vehicle": vehicle,
+
+            "reports": [
+
+                self.clean(report)
+
+                for report in reports
+
+            ]
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    def get_branchgroup_school_specific_vehicle_status(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+        # =====================================
+        # FIND SCHOOL VEHICLE UNDER BRANCH GROUP
+        # =====================================
+
+            result = self.get_branchgroup_specific_vehicle(
+            group_id,
+            vehicle_input
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+
+        # =====================================
+        # BRANCH GROUP DETAILS
+        # =====================================
+
+            branch_group = self.db["branchgroups"].find_one({
+            "_id": ObjectId(str(group_id))
+        })
+
+        # =====================================
+        # GET STATUS REPORT
+        # =====================================
+
+            status_report = self.report_status_engine.get_single_branch_vehicle_status_report(
+
+            vehicle["branchId"],
+
+            vehicle["uniqueId"],
+
+            role,
+
+            user,
+
+            limit
+
+        )
+
+        # =====================================
+        # RESPONSE
+        # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(branch_group["_id"]),
+
+                "branchGroupName": branch_group.get("branchGroupName")
+
+            },
+
+            "vehicle": vehicle,
+
+            "statusReport": status_report
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    def get_branchgroup_specific_vehicle_status(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+        # =====================================
+        # FIND VEHICLE
+        # =====================================
+
+            result = self.get_branchgroup_specific_vehicle(
+            group_id,
+            vehicle_input
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+
+        # =====================================
+        # BRANCH GROUP DETAILS
+        # =====================================
+
+            branch_group = self.db["branchgroups"].find_one({
+            "_id": ObjectId(str(group_id))
+        })
+
+        # =====================================
+        # STATUS REPORT
+        # =====================================
+
+            status_report = self.report_status_engine.get_single_branch_vehicle_status_report(
+
+            vehicle["branchId"],
+
+            vehicle["uniqueId"],
+
+            role,
+
+            user,
+
+            limit
+
+        )
+
+        # =====================================
+        # RESPONSE
+        # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(branch_group["_id"]),
+
+                "branchGroupName": branch_group.get("branchGroupName")
+
+            },
+
+            "vehicle": vehicle,
+
+            "statusReport": status_report
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
 
         }

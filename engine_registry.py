@@ -283,6 +283,28 @@ branch_group_engine.get_branchgroup_specific_branch_vehicles_g,
     # device_engine.get_specific_branch_group_profile,
     "get_specific_vehicle_last_position":
     device_engine.get_specific_vehicle_last_position,
+    "get_superadmin_route_profile":
+        route_engine.get_superadmin_route_profile,
+        "get_branchgroup_branch_vehicles_1":
+        branch_group_engine.get_branchgroup_branch_vehicles_1,
+        "get_branchgroup_school_all_vehicles_1":
+            branch_group_engine.get_branchgroup_school_all_vehicles_1,
+            "get_branchgroup_specific_vehicle_geofences":
+                branch_group_engine.get_branchgroup_specific_vehicle_geofences,
+                "get_branchgroup_school_vehicle_geofences":
+                    branch_group_engine.get_branchgroup_school_vehicle_geofences,
+                    "get_branchgroup_school_vehicle_today_distance":
+                    branch_group_engine.get_branchgroup_school_vehicle_today_distance,
+                    "get_branchgroup_school_specific_vehicle_distance_report":
+                        branch_group_engine.get_branchgroup_school_specific_vehicle_distance_report,
+                        "get_branchgroup_school_specific_vehicle_km_report":
+                            branch_group_engine.get_branchgroup_school_specific_vehicle_km_report,
+                            "get_branchgroup_specific_vehicle_distance_report":
+                                branch_group_engine.get_branchgroup_specific_vehicle_distance_report,
+                                "get_branchgroup_school_specific_vehicle_status":
+                                    branch_group_engine.get_branchgroup_school_specific_vehicle_status,
+                                    "get_branchgroup_specific_vehicle_status":
+                                        branch_group_engine.get_branchgroup_specific_vehicle_status,
 # =====================
 # BRANCH
 # =====================

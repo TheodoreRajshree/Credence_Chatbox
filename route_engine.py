@@ -7,7 +7,8 @@ class RouteEngine:
     def __init__(self, db):
         self.db = db
     
-    # ====================================
+    
+# ====================================
 # ID NORMALIZER
 # ====================================
 
@@ -86,7 +87,41 @@ class RouteEngine:
     # ====================================
     # ROUTE PROFILE
     # ====================================
+    from bson import ObjectId
 
+# ====================================
+# SUPER ADMIN ROUTE PROFILE
+# ====================================
+
+    
+
+   
+
+    def get_superadmin_route_profile(self):
+
+        routes = self.db["routes"].find({})
+
+        data = []
+
+        for route in routes:
+
+            item = {}
+
+            for key, value in route.items():
+
+                if isinstance(value, ObjectId):
+                    item[key] = str(value)
+                elif isinstance(value, list):
+                    item[key] = [
+                    str(x) if isinstance(x, ObjectId) else x
+                    for x in value
+                ]
+                else:
+                    item[key] = value
+
+            data.append(item)
+
+        return data
     def get_route_profile(
         self,
         route_id,

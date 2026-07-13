@@ -5,8 +5,10 @@ pymongo
 python-dotenv
 python-jose
 passlib
-
-
+ hashlib
+ pycryptodome
+  pycryptodome python-dotenv
+   pycryptodome
  fastapi 
  uvicorn
   pymongo

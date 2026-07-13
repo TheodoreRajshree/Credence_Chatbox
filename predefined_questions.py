@@ -48,21 +48,21 @@ QUESTIONS = {
 # },
 {
     "id": 400,
-    "question": "Show All Schools ",
+    "question": "Show Master ",
     "intent": "schools",
     
     "function": "find_school_superadmin",
 },
 {
     "id": 4000,
-    "question": "Show  All Branches",
+    "question": "Show Users",
     "intent": "schools",
     
     "function": "find_branch_superadmin",
 },
 {
   "id": 12293,
-  "question": "Show All Branchgroups",
+  "question": "Show Groups",
   "intent": "all_branchgroup_profile",
   "function": "get_all_branch_groups_profile"
 },
@@ -82,7 +82,7 @@ QUESTIONS = {
 # },
 {
         "id": 3113,
-        "question":"Show Specific Branch ",
+        "question":"Show Specific Users ",
       
         "intent": "school",
         "function": "find_specific_branch_superadmin",
@@ -97,7 +97,7 @@ QUESTIONS = {
       },
 {
         "id": 3112,
-        "question":"Show Specific School ",
+        "question":"Show Specific Master ",
       
         "intent": "school",
         "function": "find_specific_school_superadmin",
@@ -112,7 +112,7 @@ QUESTIONS = {
       },
 {
     "id": 5099223333901,
-    "question": "Show Specific Branchgroup ",
+    "question": "Show Specific Group ",
     "function": "get_specific_branch_group_profile",
     "fields": [
         {
@@ -308,7 +308,7 @@ QUESTIONS = {
 "id":1520,
 "question":"Show routes",
 "intent":"routes",
-"function":"get_route_count"
+"function":"get_superadmin_route_profile"
 },
 
 # {
@@ -1706,8 +1706,18 @@ QUESTIONS = {
 
 
 
-
-
+{
+    "id": 1234956,
+    "question": "Show all branch vehicles",
+    "function": "get_branchgroup_branch_vehicles_1",
+    "hidden":True,
+},
+{
+    "id": 12349057,
+    "question": "Show all school vehicles",
+    "function": "get_branchgroup_school_all_vehicles_1",
+    "hidden":True,
+},
 {
   "id": 123100,
   "question": "Show All Associated Vehicles",
@@ -1734,6 +1744,12 @@ QUESTIONS = {
         }
       ]
     },
+  
+{
+    "id": 1234956,
+    "label": "Show all branch vehicles",
+    "function": "get_branchgroup_branch_vehicles_1",
+},
    
     {
       "id": 8889,
@@ -1755,6 +1771,12 @@ QUESTIONS = {
         }
       ]
     },
+    {
+    "id": 12349057,
+    "label": "Show all school vehicles",
+    "function": "get_branchgroup_school_all_vehicles_1",
+  
+},
     {
       "id": 88913,
       "label": "Specific School Vehicle",
@@ -1784,6 +1806,20 @@ QUESTIONS = {
 #     }
 #   ]
 # },
+{
+    "id": 2119950,
+    "question": "Show geofences for a specific vehicle",
+    "function": "get_branchgroup_specific_vehicle_geofences",
+    "hidden":True,
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter Vehicle Name or Unique ID",
+            "placeholder": "Example: MH31FC7874"
+        }
+    ]
+},
 {
   "id": 88922137,
   "question": "Show Specific Branch Vehicle Geofence",
@@ -1835,7 +1871,12 @@ QUESTIONS = {
 
 
 
-
+ {
+    "id": 211996544531,
+    "question": "Show all school vehicle geofences",
+    "function": "get_branchgroup_school_vehicle_geofences",
+    "hidden":True,
+},
 
 
 
@@ -1857,6 +1898,20 @@ QUESTIONS = {
       "function": "get_branchgroup_geofences"
     },
     {
+    "id": 2119950,
+    "label": "Show geofences of specific branchgroup vehicle",
+    "function": "get_branchgroup_specific_vehicle_geofences",
+    
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter Vehicle Name or Unique ID",
+            "placeholder": "Example: MH31FC7874"
+        }
+    ]
+},
+    {
       "id": 88922137,
       "label": "Show Specific Branch Vehicle Geofence",
       "intent": "specific_branch_vehicle_geofence",
@@ -1876,9 +1931,16 @@ QUESTIONS = {
         }
       ]
     },
+   
+     {
+    "id": 211996544531,
+    "label": "Show all school vehicle geofences",
+    "function": "get_branchgroup_school_vehicle_geofences",
+    
+},
     {
       "id": 88,
-      "label": "Show School Vehicle Geofence",
+      "label": "Show School Specific Vehicle Geofence",
       "intent": "school_vehicle_geofence",
       "function": "get_branchgroup_school_vehicle_geofence",
       "fields": [
@@ -1985,7 +2047,20 @@ QUESTIONS = {
 
 
 
-
+{
+    "id": 21190952,
+    "question": "Show today's distance for a school vehicle",
+    "function": "get_branchgroup_school_vehicle_today_distance",
+    "hidden":True,
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter School Vehicle Name or Unique ID",
+            "placeholder": "Example: MH40CG0301"
+        }
+    ]
+},
 {
   "id": 98654000,
   "question": "Show Vehicle Distance Reports",
@@ -2027,6 +2102,20 @@ QUESTIONS = {
       ]
     },
     {
+    "id": 21190952,
+    "label": "Show today's distance for a school vehicle",
+    "function": "get_branchgroup_school_vehicle_today_distance",
+   
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter School Vehicle Name or Unique ID",
+            "placeholder": "Example: MH40CG0301"
+        }
+    ]
+},
+    {
       "id": 9812365323,
       "label": "Show Branch Group Vehicle KM Distance Report",
       "intent": "branchgroup_vehicle_km_report",
@@ -2061,6 +2150,20 @@ QUESTIONS = {
       ]
     },
     {
+  "id": 211993354,
+  "label": "Show school specific vehicle KM report",
+  "function": "get_branchgroup_school_specific_vehicle_km_report",
+ 
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "type": "text",
+      "label": "Enter School Vehicle Name or Unique ID",
+      "placeholder": "Example: MH40CG0301"
+    }
+  ]
+},
+    {
       "id": 98654423,
       "label": "Show Branch Vehicle Last Active Report",
       "intent": "branch_vehicle_last_active",
@@ -2079,6 +2182,63 @@ QUESTIONS = {
           "placeholder": "MH05GA1153"
         }
       ]
+    }
+    ,
+    {
+    "id": 21199953,
+    "label": "Show School specific vehicle last active report",
+    "function": "get_branchgroup_school_specific_vehicle_distance_report",
+    
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter School Vehicle Name or Unique ID",
+            "placeholder": "Example: MH40CG0301"
+        }
+    ]
+},
+    {
+    "id": 21199255,
+    "label": "Show Branchgroup specific vehicle last active",
+    "function": "get_branchgroup_specific_vehicle_distance_report",
+  
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter Vehicle Name or Unique ID",
+            "placeholder": "Example: MH40CG0301"
+        }
+    ]
+}
+  ]
+},
+{
+    "id": 21199953,
+    "question": "Show distance report for a school vehicle",
+    "function": "get_branchgroup_school_specific_vehicle_distance_report",
+    "hidden":True,
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter School Vehicle Name or Unique ID",
+            "placeholder": "Example: MH40CG0301"
+        }
+    ]
+},
+{
+  "id": 211993354,
+  "question": "Show school specific vehicle KM report",
+  "function": "get_branchgroup_school_specific_vehicle_km_report",
+  "hidden":True,
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "type": "text",
+      "label": "Enter School Vehicle Name or Unique ID",
+      "placeholder": "Example: MH40CG0301"
     }
   ]
 },
@@ -2099,9 +2259,46 @@ QUESTIONS = {
 
 
 
-
-
-
+{
+    "id": 21199255,
+    "question": "Show Branchgroup specific vehicle last active",
+    "function": "get_branchgroup_specific_vehicle_distance_report",
+    "hidden":True,
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter Vehicle Name or Unique ID",
+            "placeholder": "Example: MH40CG0301"
+        }
+    ]
+},
+{
+    "id": 2119957,
+    "question": "Show status report for a specific vehicle of branchgroup",
+    "function": "get_branchgroup_specific_vehicle_status",
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter Vehicle Name or Unique ID",
+            "placeholder": "Example: MH40CG0301"
+        }
+    ]
+},
+{
+    "id": 2119956,
+    "question": "Show status report for a school specific vehicle",
+    "function": "get_branchgroup_school_specific_vehicle_status",
+    "fields": [
+        {
+            "name": "vehicle_input",
+            "type": "text",
+            "label": "Enter School Vehicle Name or Unique ID",
+            "placeholder": "Example: MH40CG0301"
+        }
+    ]
+},
 {
     "id": 9865554424,
     "question": "Show branch vehicle status report",
