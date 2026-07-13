@@ -48,7 +48,7 @@ QUESTIONS = {
 # },
 {
     "id": 400,
-    "question": "Show Master ",
+    "question": "Show Admin ",
     "intent": "schools",
     
     "function": "find_school_superadmin",

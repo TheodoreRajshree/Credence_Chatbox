@@ -9764,11 +9764,10 @@ class BranchGroupEngine:
     # =====================================
 
             result = self.get_branchgroup_school_vehicle(
-            group_id,
-            vehicle_input,
-            role,
-            user
-        )
+    vehicle_input,
+    role,
+    user
+)
 
             if not result["success"]:
                 return result
