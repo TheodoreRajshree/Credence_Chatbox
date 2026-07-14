@@ -125,7 +125,7 @@ QUESTIONS = {
 },
 {
         "id": 3119,
-        "question":"all devices km report overall",
+        "question":"Specific device km report ",
       
         "intent": "devices",
         "function": "get_superadmin_single_vehicle_km_report",
@@ -401,7 +401,7 @@ QUESTIONS = {
 },
  {
     "id": 100,
-    "question": "Show branch details",
+    "question": "Show Specific branch details",
     "function": "get_school_single_branch",
     "fields": [
         {
@@ -437,18 +437,46 @@ QUESTIONS = {
             "placeholder": "Example: MH31FC7874"
           }
         ]
-      }
+      },
+       {
+  "id": 21205002,
+  "label": "Show All Branch Vehicles",
+  "function": "get_school_all_branch_devices",
+ 
+},
+       {
+  "id": 21205003,
+  "label": "Show Specific Branch Vehicle",
+  "function": "get_school_specific_branch_vehicle",
+  
+  "fields": [
+    {
+      "name": "branch_name",
+      "type": "text",
+      "label": "Enter Branch Name",
+      "placeholder": "Example: Nagpur Branch"
+    },
+    {
+      "name": "vehicle_input",
+      "type": "text",
+      "label": "Enter Vehicle Name or Number",
+      "placeholder": "Example: MH40CG0301"
+    }
+  ]
+},
     ]
   },
   {
   "id": 21205002,
   "question": "Show All Branch Vehicles",
-  "function": "get_school_all_branch_devices"
+  "function": "get_school_all_branch_devices",
+  "hidden":True,
 },
   {
   "id": 21205003,
   "question": "Show Specific Branch Vehicle",
   "function": "get_school_specific_branch_vehicle",
+  "hidden":True,
   "fields": [
     {
       "name": "branch_name",
@@ -471,30 +499,30 @@ QUESTIONS = {
         "function": "get_school_devices",
         "hidden":True,
       },
- {
-  "id": 21205005,
-  "question": "Show all branch vehicle status reports",
-  "function": "get_school_all_branch_vehicle_status_reports"
-},
- {
-  "id": 21205004,
-  "question": "Show status report for a specific branch vehicle",
-  "function": "get_school_specific_branch_vehicle_status",
-  "fields": [
-    {
-      "name": "branch_name",
-      "type": "text",
-      "label": "Enter Branch Name",
-      "placeholder": "Example: Nagpur Branch"
-    },
-    {
-      "name": "vehicle_input",
-      "type": "text",
-      "label": "Enter Vehicle Name or Number",
-      "placeholder": "Example: MH40CG0301"
-    }
-  ]
-},
+#  {
+#   "id": 21205005,
+#   "question": "Show all branch vehicle status reports",
+#   "function": "get_school_all_branch_vehicle_status_reports"
+# # },
+#  {
+#   "id": 21205004,
+#   "question": "Show status report for a specific branch vehicle",
+#   "function": "get_school_specific_branch_vehicle_status",
+#   "fields": [
+#     {
+#       "name": "branch_name",
+#       "type": "text",
+#       "label": "Enter Branch Name",
+#       "placeholder": "Example: Nagpur Branch"
+#     },
+#     {
+#       "name": "vehicle_input",
+#       "type": "text",
+#       "label": "Enter Vehicle Name or Number",
+#       "placeholder": "Example: MH40CG0301"
+#     }
+#   ]
+# },
   {
     "id": 3,
     "question": "Show school vehicle status report",
@@ -692,12 +720,7 @@ QUESTIONS = {
     ]
   },
 
-  {
-    "id": 11,
-    "question": "Show school geofences",
-    "intent": "geofences",
-    "function": "get_school_geofences"
-  },
+
     {
       "id": 58,
       "question": "Show specific vehicle today distance",
@@ -819,18 +842,42 @@ QUESTIONS = {
       }
     ]
   },
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    {
+    "id": 11,
+    "question": "Show school geofences",
+    "intent": "geofences",
+    "function": "get_school_geofences",
+     "hidden":True,
+  },
   {
     "id": 777,
     "question": "Show branch geofences ",
     "intent": "geofence",
     "function": "get_school_user_branch_geofences",
+     "hidden":True,
   },
   {
   "id": 777544399,
   "question": "Show Specific Branch Vehicle Geofence",
   "intent": "geofence",
   "function": "get_school_user_branch_geofences",
-  
+   "hidden":True,
   "fields": [
     {
       "name": "branch_name",
@@ -845,7 +892,7 @@ QUESTIONS = {
   "question": "Show specific branch speciifc vehicle geofence",
   "intent": "geofence",
   "function": "get_specific_vehicle_branch_of_school_geofences",
-  
+  "hidden":True,
   "fields": [
     {
       "name": "branch_name",
@@ -856,6 +903,73 @@ QUESTIONS = {
       "name": "vehicle_input",
       "label": "Enter Vehicle Name or Unique ID",
       "placeholder": "MH28BB7564 or 866221070659540"
+    }
+  ]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+,
+{
+  "id": 11,
+  "question": "Show school geofences",
+  "intent": "geofences",
+  "function": "get_school_geofences",
+  "options": [
+    {
+      "id": 11,
+      "label": "Show school geofences",
+      "intent": "geofences",
+      "function": "get_school_geofences"
+    },
+    {
+      "id": 777,
+      "label": "Show branch geofences",
+      "intent": "geofence",
+      "function": "get_school_user_branch_geofences"
+    },
+    {
+      "id": 777544399,
+      "label": "Show Specific Branch Vehicle Geofence",
+      "intent": "geofence",
+      "function": "get_school_user_branch_geofences",
+      "fields": [
+        {
+          "name": "branch_name",
+          "label": "Enter Branch Name",
+          "placeholder": "Anandwadi Branch"
+        }
+      ]
+    },
+    {
+      "id": 778111,
+      "label": "Show specific branch speciifc vehicle geofence",
+      "intent": "geofence",
+      "function": "get_specific_vehicle_branch_of_school_geofences",
+      "fields": [
+        {
+          "name": "branch_name",
+          "label": "Enter Branch Name",
+          "placeholder": "Anandwadi Branch"
+        },
+        {
+          "name": "vehicle_input",
+          "label": "Enter Vehicle Name or Unique ID",
+          "placeholder": "MH28BB7564 or 866221070659540"
+        }
+      ]
     }
   ]
 }
