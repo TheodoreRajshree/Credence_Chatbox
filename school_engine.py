@@ -2933,26 +2933,31 @@ class SchoolEngine:
 
         }
 
+    
+
     def find_specific_school_superadmin(
     self,
     role,
     user,
     input_value=None
 ):
-
+    # =====================================
+    # VALIDATE INPUT
+    # =====================================
         school_name = str(input_value or "").strip()
 
+        if not school_name:
+            return {
+            "success": False,
+            "message": "Please enter a School Name or School ID."
+        }
 
     # =====================================
     # RBAC FILTER
     # =====================================
-
         if role.lower() == "superadmin":
-
             base_filter = {}
-
         else:
-
             base_filter = get_rbac_filter(
             role,
             user,
@@ -2960,148 +2965,81 @@ class SchoolEngine:
             self.db
         ) or {}
 
-
-        school = None
-
-
     # =====================================
-    # REMOVE UNWANTED FIELDS
+    # PROJECTION
     # =====================================
-
         projection = {
-
         "role": 0,
-
         "fullAccess": 0,
-
         "subscriptionExpirationDate": 0,
-
         "fcmToken": 0,
-
         "lastNotifiedDate": 0,
-
         "notificationsEnabled": 0,
-
         "Notification": 0,
-
         "access": 0,
-
         "reportEmail": 0,
-
         "__v": 0
     }
 
-
+        school = None
 
     # =====================================
-    # 1. OBJECT ID MATCH
+    # SEARCH BY OBJECT ID
     # =====================================
-
         if ObjectId.is_valid(school_name):
-
             school = self.db["schools"].find_one(
             {
-                "$and": [
-                    base_filter,
-                    {
-                        "_id": ObjectId(school_name)
-                    }
-                ]
+                **base_filter,
+                "_id": ObjectId(school_name)
             },
             projection
         )
 
-
     # =====================================
-    # 2. NAME / USERNAME MATCH
+    # SEARCH BY NAME / USERNAME (EXACT MATCH)
     # =====================================
-
-        if not school:
-
+        if school is None:
             regex = re.compile(
-            re.escape(school_name),
+            f"^{re.escape(school_name)}$",
             re.IGNORECASE
         )
 
-
             school = self.db["schools"].find_one(
             {
-                "$and": [
-                    base_filter,
-                    {
-                        "$or": [
-                            {
-                                "schoolName": regex
-                            },
-                            {
-                                "username": regex
-                            }
-                        ]
-                    }
+                **base_filter,
+                "$or": [
+                    {"schoolName": regex},
+                    {"username": regex}
                 ]
             },
             projection
         )
 
+    # =====================================
+    # SCHOOL NOT FOUND
+    # =====================================
+        if school is None:
+            return {
+            "success": False,
+            "message": f"School '{school_name}' not found."
+        }
 
     # =====================================
     # RESPONSE
     # =====================================
-
-        if not school:
-
-            return {
-            "success": False,
-            "message": "School not found"
-        }
-
-
         return {
-
         "success": True,
-
         "school": {
-
-            "schoolId": str(
-                school.get("_id")
-            ),
-
-
-            "schoolName":
-                school.get("schoolName"),
-
-
-            "username":
-                school.get("username"),
-
-
-            "password":
-                self.decrypt_password(
-                    school.get("password")
-                ),
-
-
-            "email":
-                school.get("email"),
-
-
-            "mobileNo":
-                school.get("mobileNo"),
-
-
-            "address":
-                school.get("address"),
-
-
-            "createdAt":
-                school.get("createdAt"),
-
-
-            "Active":
-                school.get("Active")
-
+            "schoolId": str(school.get("_id")),
+            "schoolName": school.get("schoolName"),
+            "username": school.get("username"),
+            "password": self.decrypt_password(school.get("password")),
+            "email": school.get("email"),
+            "mobileNo": school.get("mobileNo"),
+            "address": school.get("address"),
+            "createdAt": school.get("createdAt"),
+            "Active": school.get("Active")
         }
-
     }
     def get_school_specific_branch_vehicle_status(
     self,

@@ -303,95 +303,118 @@ class DeviceEngine:
     #         })
 
     #     return matched  if matched else None
-    def get_superadmin_vehicle_details(self, role, user, vehicle_input=None):
+   
 
+    def get_superadmin_vehicle_details(
+    self,
+    role,
+    user,
+    vehicle_input=None
+):
+
+    # =====================================
+    # GET INPUT
+    # =====================================
         if isinstance(vehicle_input, dict):
             vehicle_input = vehicle_input.get("vehicle_input")
 
+        vehicle_input = str(vehicle_input or "").strip()
+
         if not vehicle_input:
-            return None
+            return {
+            "success": False,
+            "message": "Please enter a Vehicle Name or Unique ID."
+        }
 
-        vehicle_input = vehicle_input.strip().lower()
+        regex = re.compile(
+        re.escape(vehicle_input),
+        re.IGNORECASE
+    )
 
-        devices = self.db["devices"].find({})
+    # =====================================
+    # SEARCH VEHICLES
+    # =====================================
+        devices = self.db["devices"].find({
+        "$or": [
+            {"name": regex},
+            {"uniqueId": regex}
+        ]
+    })
 
         matched = []
 
         for device in devices:
 
-            name = (device.get("name") or "").strip().lower()
-            unique_id = str(device.get("uniqueId") or "").strip().lower()
-
-        # Match by vehicle name or uniqueId
-            if vehicle_input in name or vehicle_input == unique_id:
-
-            # Get latest history for total distance
-                history = self.db["histories"].find_one(
-                {
-                    "uniqueId": {
-                        "$in": self.normalize_unique_id(
-                            device.get("uniqueId")
-                        )
-                    },
-                    "attributes.totalDistance": {
-                        "$ne": None
-                    }
+            history = self.db["histories"].find_one(
+            {
+                "uniqueId": {
+                    "$in": self.normalize_unique_id(
+                        device.get("uniqueId")
+                    )
                 },
-                sort=[("createdAt", -1)]
+                "attributes.totalDistance": {
+                    "$ne": None
+                }
+            },
+            sort=[("createdAt", -1)]
+        )
+
+            total_km = (
+            round(
+                history.get("attributes", {}).get("totalDistance", 0) / 1000,
+                2
+            )
+            if history else 0
+        )
+
+            school = None
+            if device.get("schoolId"):
+                school = self.db["schools"].find_one(
+                {"_id": device.get("schoolId")},
+                {"schoolName": 1}
             )
 
-                total_km = (
-                round(
-                    history.get("attributes", {}).get("totalDistance", 0) / 1000,
-                    2
-                )
-                if history else 0
+            branch = None
+            if device.get("branchId"):
+                branch = self.db["branches"].find_one(
+                {"_id": device.get("branchId")},
+                {"branchName": 1}
             )
 
-                school = (
-                self.db["schools"].find_one(
-                    {"_id": device.get("schoolId")},
-                    {"schoolName": 1}
-                )
-                if device.get("schoolId")
-                else None
-            )
+            matched.append({
 
-                branch = (
-                self.db["branches"].find_one(
-                    {"_id": device.get("branchId")},
-                    {"branchName": 1}
-                )
-                if device.get("branchId")
-                else None
-            )
+            "deviceId": str(device["_id"]),
+            "vehicleName": device.get("name"),
+            "uniqueId": device.get("uniqueId"),
+            "sim": device.get("sim"),
+            "model": device.get("model"),
+            "category": device.get("category"),
+            "status": device.get("status"),
+            "speed": device.get("speed"),
+            "average": device.get("average"),
+            "todayKm": total_km,
+            "installationDate": device.get("installationdate"),
+            "expirationDate": device.get("expirationdate"),
+            "schoolName": school.get("schoolName") if school else None,
+            "branchName": branch.get("branchName") if branch else None
 
-                matched.append({
+        })
 
-                "deviceId": str(device["_id"]),
-                
-                
-                "vehicleName": device.get("name"),
-                "uniqueId": device.get("uniqueId"),
-                "sim": device.get("sim"),
-                "model": device.get("model"),
-                "category": device.get("category"),
-                "status": device.get("status"),
-                "speed": device.get("speed"),
-                "average": device.get("average"),
+    # =====================================
+    # NO VEHICLE FOUND
+    # =====================================
+        if not matched:
+            return {
+            "success": False,
+            "message": f"No vehicle found for '{vehicle_input}'."
+        }
 
-                # Latest total distance (KM)
-                "todayKm": total_km,
-
-                "installationDate": device.get("installationdate"),
-                "expirationDate": device.get("expirationdate"),
-
-                "schoolName": school.get("schoolName") if school else None,
-                "branchName": branch.get("branchName") if branch else None,
-            })
-
-        return matched if matched else None
-    # ==========================================
+        return {
+        "success": True,
+        "count": len(matched),
+        "vehicles": matched
+    }
+    #=============================
     # ALL DEVICES
     # ==========================================
 
