@@ -933,6 +933,83 @@ class SchoolEngine:
             for d in drivers
 
         ]
+    def get_school_devices(
+    self,
+    school_id,
+    role,
+    user
+):
+
+    # RBAC filter
+        device_filter = get_rbac_filter(
+        role,
+        user,
+        "devices",
+        self.db
+    )
+
+    # Get all devices of school
+        devices = self.db["devices"].find({
+
+        "$and": [
+
+            device_filter,
+
+            {
+                "$or": [
+                    {"schoolId": ObjectId(str(school_id))},
+                    {"schoolId": str(school_id)}
+                ]
+            }
+
+        ]
+
+    })
+
+
+        vehicles = []
+
+        for device in devices:
+
+            vehicle = {
+
+            "vehicleName": (
+                device.get("vehicleNumber")
+                or device.get("vehicle_name")
+                or device.get("name")
+                or device.get("uniqueId")
+            ),
+
+            "deviceId": str(device.get("_id")),
+
+            "uniqueId": device.get("uniqueId"),
+
+            "status": device.get("status"),
+
+            "model": device.get("model"),
+
+            "category": device.get("category"),
+
+            "speed": device.get("speed"),
+
+            "average": device.get("average")
+
+        }
+
+            vehicles.append(vehicle)
+
+
+        return {
+
+        "success": True,
+
+        "schoolId": str(school_id),
+
+        "totalDevices": len(vehicles),
+
+        "vehicles": vehicles
+
+    }
     def get_school_single_vehicle(
     self,
     school_name,

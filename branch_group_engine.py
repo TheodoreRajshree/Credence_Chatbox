@@ -244,10 +244,10 @@ class BranchGroupEngine:
                 ),
 
 
-            "schoolId":
-                str(group.get("schoolId"))
-                if group.get("schoolId")
-                else None,
+            # "schoolId":
+            #     str(group.get("schoolId"))
+            #     if group.get("schoolId")
+            #     else None,
 
 
             "mobileNo":
@@ -262,10 +262,10 @@ class BranchGroupEngine:
                 ),
 
 
-            "email":
-                group.get(
-                    "email"
-                ),
+            # "email":
+            #     group.get(
+            #         "email"
+            #     ),
 
 
             "role":
@@ -274,28 +274,28 @@ class BranchGroupEngine:
                 ),
 
 
-            "active":
-                group.get(
-                    "Active"
-                ),
+            # "active":
+            #     group.get(
+            #         "Active"
+            #     ),
 
 
-            "access":
-                group.get(
-                    "access"
-                ),
+            # "access":
+            #     group.get(
+            #         "access"
+            #     ),
 
 
-            "notification":
-                group.get(
-                    "Notification"
-                ),
+            # "notification":
+            #     group.get(
+            #         "Notification"
+            #     ),
 
 
-            "fcmToken":
-                group.get(
-                    "fcmToken"
-                ),
+            # "fcmToken":
+            #     group.get(
+            #         "fcmToken"
+            #     ),
 
 
             "createdAt":
@@ -490,41 +490,41 @@ class BranchGroupEngine:
 
         "assignedBranches": assigned_branches,
 
-        "mobileNo": group.get(
-            "mobileNo"
-        ),
+        # "mobileNo": group.get(
+        #     "mobileNo"
+        # ),
 
-        "username": group.get(
-            "username"
-        ),
+        # "username": group.get(
+        #     "username"
+        # ),
 
-        "email": group.get(
-            "email"
-        ),
+        # "email": group.get(
+        #     "email"
+        # ),
 
-        "role": group.get(
-            "role"
-        ),
+        # "role": group.get(
+        #     "role"
+        # ),
 
-        "active": group.get(
-            "Active"
-        ),
+        # "active": group.get(
+        #     "Active"
+        # ),
 
-        "access": group.get(
-            "access"
-        ),
+        # "access": group.get(
+        #     "access"
+        # ),
 
-        "notification": group.get(
-            "Notification"
-        ),
+        # "notification": group.get(
+        #     "Notification"
+        # ),
 
-        "fcmToken": group.get(
-            "fcmToken"
-        ),
+        # "fcmToken": group.get(
+        #     "fcmToken"
+        # ),
 
-        "createdAt": group.get(
-            "createdAt"
-        )
+        # "createdAt": group.get(
+        #     "createdAt"
+        # )
 
     }
 
@@ -1072,16 +1072,16 @@ class BranchGroupEngine:
                 device.get("deviceId"),
 
 
-            "branchId":
-                str(device.get("branchId"))
-                if device.get("branchId")
-                else None,
+            # "branchId":
+            #     str(device.get("branchId"))
+            #     if device.get("branchId")
+            #     else None,
 
 
-            "schoolId":
-                str(device.get("schoolId"))
-                if device.get("schoolId")
-                else None,
+            # "schoolId":
+            #     str(device.get("schoolId"))
+            #     if device.get("schoolId")
+            #     else None,
 
 
             "status":

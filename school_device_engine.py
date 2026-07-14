@@ -1056,12 +1056,29 @@ class SchoolDeviceEngine:
         "totalDevices": len(devices),
 
         "devices": [
-
-            self.clean(device)
-
-            for device in devices
-
+    {
+        key: value
+        for key, value in self.clean(device).items()
+        if key not in [
+            "positionId",
+            "parkingMode",
+            "toeingMode",
+            "keyFeature",
+            "TD",
+            "TDTime",
+            "schoolId",
+            "branchId",
+            "__v",
+            "createdAt",
+            "updatedAt",
+            "installationdate",
+            "TotalKmOfDevice",
+            "expirationdate"
         ]
+    }
+    for device in devices
+]
+        
 
     }
     def get_school_specific_branch_vehicle(

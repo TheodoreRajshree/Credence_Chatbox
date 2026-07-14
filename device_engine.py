@@ -254,56 +254,9 @@ class DeviceEngine:
     ]
 
         return list(self.db["devices"].aggregate(pipeline))
-    
-    # def get_superadmin_vehicle_details(self, role, user, vehicle_input=None):
-
-    #     if isinstance(vehicle_input, dict):
-    #         vehicle_input = vehicle_input.get("vehicle_input")
-
-    #     if not vehicle_input:
-    #         return None
-
-    #     vehicle_input = vehicle_input.strip().lower()
-    #     devices=self.db.devices.find({})
-
-    #     matched = []
-
-    #     for device in devices:
-
-    #             name = (device.get("name") or "").strip().lower()
-    #             unique_id = str(device.get("uniqueId") or "").strip().lower()
-
-    #     # match by vehicle name OR uniqueId
-    #             if vehicle_input in name or vehicle_input == unique_id:
-
-    #                 matched.append({
-    #             "deviceId": str(device["_id"]),
-    #             "vehicleName": device.get("name"),
-    #             "uniqueId": device.get("uniqueId"),
-    #             "sim": device.get("sim"),
-    #             "model": device.get("model"),
-    #             "category": device.get("category"),
-    #             "status": device.get("status"),
-    #             "speed": device.get("speed"),
-    #             "average": device.get("average"),
-    #             # "totalKm": device.get("TotalKmOfDevice"),
-    #             "installationDate": device.get("installationdate"),
-    #             "expirationDate": device.get("expirationdate"),
-    #             # "schoolId": str(device.get("schoolId")) if device.get("schoolId") else None,
-    #             # "branchId": str(device.get("branchId")) if device.get("branchId") else None
-    #             "schoolName": self.db["schools"].find_one(
-    #             {"_id": device.get("schoolId")},
-    #             {"schoolName": 1}
-    #             ).get("schoolName") if device.get("schoolId") else None,
-
-    #             "branchName": self.db["branches"].find_one(
-    #             {"_id": device.get("branchId")},
-    #             {"branchName": 1}
-    #             ).get("branchName") if device.get("branchId") else None,
-    #         })
-
-    #     return matched  if matched else None
    
+    #           
+    #        
 
     def get_superadmin_vehicle_details(
     self,
@@ -503,27 +456,43 @@ class DeviceEngine:
     # ==========================================
     # SCHOOL DEVICES
     # ==========================================
-
+    
     def get_school_devices(self, school_id):
 
         devices = []
 
         rbac_filter = get_rbac_filter(
-            "school",
-            {"_id": ObjectId(str(school_id))},
-            "devices",
-            self.db
-        )
+        "school",
+        {"_id": ObjectId(str(school_id))},
+        "devices",
+        self.db
+    )
 
         query = {
-            "$and": [
-                rbac_filter,
-                {"schoolId": ObjectId(str(school_id))}
-            ]
-        }
+        "$and": [
+            rbac_filter,
+            {"schoolId": ObjectId(str(school_id))}
+        ]
+    }
 
         for d in self.db["devices"].find(query):
-            devices.append(self.get_device_details(d))
+
+            device_details = self.get_device_details(d)
+
+            if device_details:
+                device = device_details[0]
+
+                devices.append({
+                "deviceId": device.get("deviceId"),
+                "vehicleName": device.get("vehicleName"),
+                "uniqueId": device.get("uniqueId"),
+                "sim": device.get("sim"),
+                "model": device.get("model"),
+                "category": device.get("category"),
+                "status": device.get("status"),
+                "speed": device.get("speed"),
+                "average": device.get("average")
+            })
 
         return devices
 

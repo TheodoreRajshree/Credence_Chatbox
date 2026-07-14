@@ -448,7 +448,7 @@ branch_group_engine.get_branch_group_profile,
 
 
 "get_school_devices":
-    device_engine.get_school_devices,
+    school_engine.get_school_devices,
 
 
 "get_branch_devices":
@@ -949,9 +949,9 @@ school_engine.get_route_school_specific_vehicle,
     school_device_engine.get_school_with_vehicles,
 
 
-"get_school_devices":
+# "get_school_devices":
 
-    school_device_engine.get_school_devices,
+#     school_device_engine.get_school_devices,
 
 
 "get_school_device_summary":
