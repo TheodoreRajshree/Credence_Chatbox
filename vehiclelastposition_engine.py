@@ -618,4 +618,5 @@ class VehicleLastPositionEngine:
 
         }
 
-    }
+    }   
+        

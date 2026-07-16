@@ -52,14 +52,23 @@ class LoginRequest(BaseModel):
 class QuestionRequest(BaseModel):
     pass
 class PredefinedChatRequest(BaseModel):
-    # token: str
-    message: str | None = None 
+
+    message: str | None = None
+
     question_id: int
+
     branch_name: str | None = None
+
+    school_name: str | None = None
+    school_id: str | None = None
+
     vehicle_input: str | None = None
+
     function: str | None = None
+
     branchgroup_input: str | None = None
-    report_date: str | None = None 
+
+    report_date: str | None = None
 # ==========================
 # DB CONNECTION
 # ==========================
@@ -403,11 +412,19 @@ def predefined_chat(
         print("QUESTION ID:", req.question_id)
 
         input_value = {
+
     "branch_name": req.branch_name,
+
+    "school_name": req.school_name,
+
+    "school_id": req.school_id,
+
     "vehicle_input": req.vehicle_input,
+
     "branchgroup_input": req.branchgroup_input,
-    "report_date": req.report_date, 
-   
+
+    "report_date": req.report_date,
+
 }
         print(req.model_dump())
         response = execute_predefined_question(
@@ -458,6 +475,7 @@ def predefined_chat(
 # ==========================
 # START SERVER
 # ==========================
+
 def detect_intent(text: str):
     text = text.lower()
 

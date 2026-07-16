@@ -81,35 +81,33 @@ QUESTIONS = {
 #   ]
 # },
 {
-        "id": 3113,
-        "question":"Show Specific Users ",
-      
-        "intent": "school",
-        "function": "find_specific_branch_superadmin",
-        "fields": [
-          {
-            "name": "vehicle_input",
-            "type": "text",
-            "label": "Enter Vehicle Name or Unique ID",
-            "placeholder": "Example: MH31FC7874"
-          }
-        ]
-      },
+  "id": 3113,
+  "question":"Show Specific User",
+  "intent": "branch",
+  "function": "find_specific_branch_superadmin",
+  "fields": [
+    {
+      "name": "branch_name",
+      "type": "text",
+      "label": "Enter Branch Name or Branch ID",
+      "placeholder": "Example: NAGPURTEST"
+    }
+  ]
+},
 {
-        "id": 3112,
-        "question":"Show Specific Admin ",
-      
-        "intent": "school",
-        "function": "find_specific_school_superadmin",
-        "fields": [
-          {
-            "name": "vehicle_input",
-            "type": "text",
-            "label": "Enter Vehicle Name or Unique ID",
-            "placeholder": "Example: MH31FC7874"
-          }
-        ]
-      },
+  "id":3114,
+  "question":"Show Specific Admin",
+  "intent":"school",
+  "function":"find_specific_school_superadmin",
+  "fields":[
+    {
+      "name":"school_name",
+      "type":"text",
+      "label":"Enter School Name or School ID",
+      "placeholder":"Example: Nagpur Public School"
+    }
+  ]
+},
 {
     "id": 5099223333901,
     "question": "Show Specific Group ",
@@ -184,7 +182,7 @@ QUESTIONS = {
 # "function":"get_active_vehicles"
 # },
 {
-  "id": 12208008,
+  "id": 122083333008,
   "question": "Show specific active vehicle",
   "intent": "specific_active_vehicle",
   "function": "get_specific_active_vehicle",
@@ -204,7 +202,7 @@ QUESTIONS = {
 # "function":"get_stopped_vehicles"
 # },
 {
-  "id": 122082009,
+  "id": 1220282009,
   "question": "Show specific stopped vehicle",
   "intent": "specific_stopped_vehicle",
   "function": "get_specific_stopped_vehicle",

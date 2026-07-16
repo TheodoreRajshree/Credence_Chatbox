@@ -52,64 +52,29 @@ class BranchGroupEngine:
 
 
     def normalize_unique_id(self, uid):
-
         ids = []
-
         if uid is None:
             return ids
-
         ids.append(uid)
         ids.append(str(uid))
-
         try:
             ids.append(int(float(uid)))
         except:
             pass
-
         try:
             ids.append(float(uid))
         except:
             pass
-
         return list(set(ids))
-    # def normalize_unique_id(self, uid):
-
-    # ids = []
-
-    # if uid is None:
-    #     return ids
-
-
-    # ids.append(uid)
-    # ids.append(str(uid))
-
-
-    # try:
-    #     ids.append(int(float(uid)))
-    # except:
-    #     pass
-
-
-    # try:
-    #     ids.append(float(uid))
-    # except:
-    #     pass
-
-
-    # return list(set(ids))
+    
     # ====================================
     # CONVERT ID
     # ====================================
     def _convert_group_id(self, group_id):
-
         try:
             return ObjectId(str(group_id))
-
         except:
             return group_id
-
-
-
     # ====================================
     # GET BRANCH GROUP PROFILE
     # ====================================
@@ -118,28 +83,20 @@ class BranchGroupEngine:
     group_id,
     role,
     user
-):
-
+):   
     # ====================================
     # STEP 1: AUTO GROUP ID
     # ====================================
-
         if not group_id:
-
             group_id = (
             user.get("groupId")
             or user.get("branchGroupId")
             or user.get("_id")
         )
-
-
         try:
             group_value = ObjectId(str(group_id))
         except:
             group_value = str(group_id)
-
-
-
     # ====================================
     # STEP 2: RBAC FILTER
     # ====================================
@@ -302,9 +259,7 @@ class BranchGroupEngine:
                 group.get(
                     "createdAt"
                 )
-
         }
-
     }
     def get_branch_group_profile(
     self,

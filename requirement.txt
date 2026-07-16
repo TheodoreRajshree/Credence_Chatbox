@@ -1,21 +1,41 @@
- requests
- fastapi
+requests
+
+fastapi
+
 uvicorn
+
 pymongo
+
 python-dotenv
+
 python-jose
+
 passlib
- 
- pycryptodome
+
 pycryptodome
- fastapi 
- uvicorn
-  pymongo
-   pyjwt
-    python-multipart
-     python-dotenv
-      python-jose
-      sentence-transformers
- faiss-cpu
- numpy
- google-genai
+
+pycryptodome
+
+fastapi 
+
+uvicorn
+
+pymongo
+
+pyjwt
+
+python-multipart
+
+python-dotenv
+
+python-jose
+
+sentence-transformers
+
+faiss-cpu
+
+numpy
+
+google-genai
+
+python-dateutil

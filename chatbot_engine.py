@@ -1,5 +1,4 @@
 # chatbot_engine.py
-
 from pymongo import MongoClient
 from bson import ObjectId
 import json
@@ -417,17 +416,12 @@ def execute_predefined_question(
             "get_specific_branch_group_profile",
             "get_specific_vehicle_last_position",
             "get_specific_active_vehicle",
-            "get_specific_stopped_vehicle",
-           "get_specific_status_report",
+            # "get_specific_stopped_vehicle",
+        #    "get_specific_status_report",
+        "find_specific_school_superadmin",
            "get_superadmin_vehicle_distance_by_date",
-           
-           
-         
-            
-            
-            
-            
-
+           "find_specific_branch_superadmin",
+           "find_specific_school_superadmin",
         ):
 
             if not input_value:
@@ -467,6 +461,48 @@ def execute_predefined_question(
         user
 
     ) 
+            elif function_name == "find_specific_branch_superadmin":
+
+                if isinstance(input_value, dict):
+
+                    branch_input = (
+            input_value.get("branch_name")
+            or input_value.get("branch_id")
+        )
+
+                else:
+                    branch_input = input_value
+
+
+                print("BRANCH INPUT =", branch_input)
+
+
+                return engine_method(
+        role,
+        user,
+        branch_input
+    )
+            elif function_name == "find_specific_school_superadmin":
+
+                if isinstance(input_value, dict):
+
+                    school_input = (
+            input_value.get("school_name")
+            or input_value.get("school_id")
+        )
+
+                else:
+                    school_input = input_value
+
+
+                print("SCHOOL INPUT =", school_input)
+
+
+                return engine_method(
+        role,
+        user,
+        school_input
+    )
             elif function_name == "get_school_all_branch_vehicle_status_reports":
 
                 result = engine_method(
@@ -519,32 +555,19 @@ def execute_predefined_question(
         role,
         user
     )
+            
+           
+            
             elif function_name == "get_specific_stopped_vehicle":
 
-                vehicle_input = None
-
-                if isinstance(input_value, dict):
-
-                    vehicle_input = (
-            input_value.get("vehicle_input")
-            or input_value.get("vehicle_name")
-            or input_value.get("unique_id")
-        )
-
-                else:
-
-                    vehicle_input = input_value
-
+                vehicle_input = input_value.get("vehicle_input")
 
                 result = engine_method(
-
         role,
-
         user,
-
         vehicle_input
-
     )
+                
             elif function_name == "get_specific_distance_report":
 
                 vehicle_input = None
@@ -720,17 +743,16 @@ def execute_predefined_question(
         user,
         branchgroup_name
     )
+            
+
             elif function_name == "get_specific_active_vehicle":
 
+                vehicle_input = input_value.get("vehicle_input")
+
                 result = engine_method(
-
         role,
-
         user,
-
-        input_value
-
-
+        vehicle_input
     )
             
             elif function_name == "get_superadmin_vehicle_distance_by_date":

@@ -10,7 +10,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 load_dotenv()
 from fastapi import HTTPException
-
+import re
 from report_status_engine import ReportStatusEngine
 class DeviceEngine:
 
@@ -1242,12 +1242,12 @@ class DeviceEngine:
                 vehicle.get("longitude"),
 
 
-            "speed":
-                vehicle.get("speed"),
+            # "speed":
+            #     vehicle.get("speed"),
 
 
-            "lastUpdate":
-                vehicle.get("lastUpdate")
+            # "lastUpdate":
+            #     vehicle.get("lastUpdate")
 
         }
 
@@ -1259,141 +1259,58 @@ class DeviceEngine:
     vehicle_input=None
 ):
 
+        vehicle_input = str(vehicle_input or "").strip().lower().replace(" ", "")
 
-    # ====================================
-    # STEP 1: VEHICLE INPUT
-    # ====================================
-
-        vehicle_name = str(vehicle_input or "").strip()
-
-
-        if not vehicle_name:
-
+        if not vehicle_input:
             return {
-
             "success": False,
-
             "message": "Please enter vehicle name or unique ID"
-
         }
 
-
-
-    # ====================================
-    # STEP 2: SEARCH VEHICLE
-    # ====================================
-
-        regex = re.compile(
-
-        re.escape(vehicle_name),
-
-        re.IGNORECASE
-
-    )
-
-
+    # Get all active vehicles (same logic as get_active_vehicles)
         vehicles = list(
-
         self.db["vehiclelastpositions"].find({
-
             "$and": [
-
-                self.get_position_filter(
-
-                    role,
-
-                    user
-
-                ),
-
+                self.get_position_filter(role, user),
                 {
-
                     "speed": {
-
                         "$gt": 0
-
                     }
-
-                },
-
-                {
-
-                    "$or": [
-
-                        {
-
-                            "name": regex
-
-                        },
-
-                        {
-
-                            "uniqueId": regex
-
-                        }
-
-                    ]
-
                 }
-
             ]
-
         })
-
     )
 
+    # Search the requested vehicle
+        selected_vehicle = None
 
+        for v in vehicles:
 
-        if not vehicles:
+            name = str(v.get("name", "")).strip().lower().replace(" ", "")
+            unique_id = str(v.get("uniqueId", "")).strip().lower().replace(" ", "")
 
+            if vehicle_input == name or vehicle_input == unique_id:
+                selected_vehicle = v
+                break
+
+        if not selected_vehicle:
             return {
-
             "success": False,
-
             "message": "Active vehicle not found"
-
         }
-
-
-
-    # ====================================
-    # STEP 3: RESPONSE
-    # ====================================
 
         return {
-
         "success": True,
-
-        "vehicles": [
-
-            {
-
-                "vehicleName":
-                    v.get("name"),
-
-
-                "uniqueId":
-                    v.get("uniqueId"),
-
-
-                "speed":
-                    v.get("speed"),
-
-
-                "latitude":
-                    v.get("latitude"),
-
-
-                "longitude":
-                    v.get("longitude")
-
-            }
-
-                for v in vehicles
-
-        ]
-
+        "vehicle": {
+            "vehicleName": selected_vehicle.get("name"),
+            "uniqueId": selected_vehicle.get("uniqueId"),
+            "speed": selected_vehicle.get("speed"),
+            "latitude": selected_vehicle.get("latitude"),
+            "longitude": selected_vehicle.get("longitude")
+        }
     }
+        
+        
     def get_position_filter(
         self,
         role,
@@ -1411,6 +1328,10 @@ class DeviceEngine:
             self.db
 
         )
+    
+
+
+    
     def get_specific_stopped_vehicle(
     self,
     role,
@@ -1418,122 +1339,58 @@ class DeviceEngine:
     vehicle_input=None
 ):
 
-    # ====================================
-    # STEP 1: VEHICLE INPUT
-    # ====================================
+        vehicle_input = str(vehicle_input or "").strip().lower().replace(" ", "")
 
-        vehicle_name = str(vehicle_input or "").strip()
-
-
-        if not vehicle_name:
-
+        if not vehicle_input:
             return {
-
             "success": False,
-
             "message": "Please enter vehicle name or unique ID"
-
         }
 
-
-    # ====================================
-    # STEP 2: SEARCH VEHICLE
-    # ====================================
-
-        regex = re.compile(
-
-        re.escape(vehicle_name),
-
-        re.IGNORECASE
-
+    # Get all stopped vehicles
+        vehicles = list(
+        self.db["vehiclelastpositions"].find({
+            "$and": [
+                self.get_position_filter(role, user),
+                {
+                    "speed": 0
+                }
+            ]
+        })
     )
 
+    # Search the requested vehicle
+        selected_vehicle = None
 
-        vehicle = self.db["vehiclelastpositions"].find_one({
+        for v in vehicles:
 
-        "$and": [
+            name = str(v.get("name", "")).strip().lower().replace(" ", "")
+            unique_id = str(v.get("uniqueId", "")).strip().lower().replace(" ", "")
 
-            self.get_position_filter(
+            if vehicle_input == name or vehicle_input == unique_id:
+                selected_vehicle = v
+                break
 
-                role,
-
-                user
-
-            ),
-
-            {
-
-                "speed": 0
-
-            },
-
-            {
-
-                "$or": [
-
-                    {
-
-                        "name": regex
-
-                    },
-
-                    {
-
-                        "uniqueId": regex
-
-                    }
-
-                ]
-
-            }
-
-        ]
-
-    })
-
-
-        if not vehicle:
-
+        if not selected_vehicle:
             return {
-
             "success": False,
-
             "message": "Stopped vehicle not found"
-
         }
-
-
-    # ====================================
-    # STEP 3: RESPONSE
-    # ====================================
 
         return {
-
         "success": True,
-
         "vehicle": {
-
-            "vehicleName":
-                vehicle.get("name"),
-
-            "uniqueId":
-                vehicle.get("uniqueId"),
-
-            "latitude":
-                vehicle.get("latitude"),
-
-            "longitude":
-                vehicle.get("longitude"),
-
-            "lastUpdate":
-                vehicle.get("lastUpdate"),
-
-            "speed":
-                vehicle.get("speed")
-
+            "vehicleName": selected_vehicle.get("name"),
+            "uniqueId": selected_vehicle.get("uniqueId"),
+            "speed": selected_vehicle.get("speed"),
+            "latitude": selected_vehicle.get("latitude"),
+            "longitude": selected_vehicle.get("longitude"),
+            "lastUpdate": selected_vehicle.get("lastUpdate"),
+            "outdated": selected_vehicle.get("outdated"),
+            "valid": selected_vehicle.get("valid")
         }
-
     }
+
     def get_specific_status_report(
     self,
     role,
@@ -2895,6 +2752,7 @@ class DeviceEngine:
 
    
 
+    
     def get_superadmin_vehicle_distance_by_date(
     self,
     vehicle_input,
@@ -2913,6 +2771,7 @@ class DeviceEngine:
             "message": "Only Superadmin can access this report."
         }
 
+
     # =====================================
     # FIND VEHICLE
     # =====================================
@@ -2929,29 +2788,58 @@ class DeviceEngine:
             "message": "Vehicle not found."
         }
 
+
         unique_ids = self.normalize_unique_id(
         vehicle.get("uniqueId")
     )
 
+
     # =====================================
-    # CONVERT DATE (DD-MM-YYYY)
+    # CONVERT ANY DATE FORMAT
     # =====================================
 
         try:
 
-            start_date = datetime.strptime(
-            report_date,
-            "%d-%m-%Y"
+            from dateutil import parser
+
+
+            try:
+
+                start_date = parser.parse(
+                report_date
+            )
+
+
+            except Exception:
+
+                return {
+                "success": False,
+                "message": (
+                    f"Invalid date format '{report_date}'. "
+                    "Please provide a valid date."
+                )
+            }
+
+
+        # Remove time part
+            start_date = datetime(
+            start_date.year,
+            start_date.month,
+            start_date.day
         )
 
+
             end_date = start_date + timedelta(days=1)
+
 
         except Exception:
 
             return {
             "success": False,
-            "message": "Invalid date format. Please use DD-MM-YYYY."
+            "message": "Invalid date."
         }
+
+
 
     # =====================================
     # FIND REPORT
@@ -2964,17 +2852,41 @@ class DeviceEngine:
         },
 
         "createdAt": {
+
             "$gte": start_date,
+
             "$lt": end_date
+
         }
 
     })
 
+
         if not report:
+
             return {
+
             "success": False,
-            "message": f"No KM report found for {report_date}."
+
+            "message": (
+                f"No KM report found for vehicle "
+                f"'{vehicle_input}' on date '{report_date}'."
+            ),
+
+            "vehicle": {
+
+                "vehicleName": (
+                    vehicle.get("vehicleName")
+                    or vehicle.get("name")
+                ),
+
+                "uniqueId": vehicle.get("uniqueId")
+
+            }
+
         }
+
+
 
     # =====================================
     # RESPONSE
@@ -2983,6 +2895,7 @@ class DeviceEngine:
         return {
 
         "success": True,
+
 
         "vehicle": {
 
@@ -3003,12 +2916,15 @@ class DeviceEngine:
 
         },
 
+
         "distanceReport": {
 
             "date": report_date,
 
             "distanceKm": round(
-                float(report.get("distance", 0)),
+                float(
+                    report.get("distance", 0)
+                ),
                 2
             ),
 

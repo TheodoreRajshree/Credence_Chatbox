@@ -370,8 +370,8 @@ class SchoolEngine:
         },
 
         "vehicle": {
-            "vehicleName": selected_device.get("vehicleName"),
-            "vehicleNumber": selected_device.get("vehicleNumber"),
+            # "vehicleName": selected_device.get("vehicleName"),
+            # "vehicleNumber": selected_device.get("vehicleNumber"),
             "name": selected_device.get("name"),
             "uniqueId": selected_device.get("uniqueId")
         },
@@ -380,18 +380,18 @@ class SchoolEngine:
 
             "latitude": position.get("latitude"),
             "longitude": position.get("longitude"),
-            "speed": position.get("speed"),
-            "course": position.get("course"),
-            "accuracy": position.get("accuracy"),
-            "altitude": position.get("altitude"),
-            "address": position.get("address"),
-            "protocol": position.get("protocol"),
-            "deviceTime": position.get("deviceTime"),
-            "fixTime": position.get("fixTime"),
-            "serverTime": position.get("serverTime"),
-            "lastUpdate": position.get("lastUpdate"),
-            "valid": position.get("valid"),
-            "outdated": position.get("outdated")
+            # "speed": position.get("speed"),
+            # "course": position.get("course"),
+            # "accuracy": position.get("accuracy"),
+            # "altitude": position.get("altitude"),
+            # "address": position.get("address"),
+            # "protocol": position.get("protocol"),
+            # "deviceTime": position.get("deviceTime"),
+            # "fixTime": position.get("fixTime"),
+            # "serverTime": position.get("serverTime"),
+            # "lastUpdate": position.get("lastUpdate"),
+            # "valid": position.get("valid"),
+            # "outdated": position.get("outdated")
 
         }
 
