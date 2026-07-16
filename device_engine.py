@@ -71,8 +71,13 @@ class DeviceEngine:
             self.db
         )
 
-        regex = re.compile(re.escape(text), re.IGNORECASE)
+        
 
+        regex = re.compile(
+    f"^{re.escape(text)}$",
+    re.IGNORECASE
+)
+        
         pipeline = [
             {
                 "$match": rbac_filter
@@ -279,20 +284,24 @@ class DeviceEngine:
             "message": "Please enter a Vehicle Name or Unique ID."
         }
 
-        regex = re.compile(
-        re.escape(vehicle_input),
-        re.IGNORECASE
-    )
+        vehicle_input = vehicle_input.strip()
 
-    # =====================================
-    # SEARCH VEHICLES
-    # =====================================
+        regex = re.compile(
+    f"^{re.escape(vehicle_input)}$",
+    re.IGNORECASE
+)
+
+
         devices = self.db["devices"].find({
-        "$or": [
-            {"name": regex},
-            {"uniqueId": regex}
-        ]
-    })
+    "$or": [
+        {
+            "name": regex
+        },
+        {
+            "uniqueId": regex
+        }
+    ]
+})
 
         matched = []
 
@@ -1435,12 +1444,9 @@ class DeviceEngine:
 
 
         regex = re.compile(
-
-        re.escape(vehicle_name),
-
-        re.IGNORECASE
-
-    )
+    f"^{re.escape(vehicle_name)}$",
+    re.IGNORECASE
+)
 
 
         query = {
@@ -1646,10 +1652,9 @@ class DeviceEngine:
     # =====================================
 
         regex = re.compile(
-        re.escape(vehicle_input),
-        re.IGNORECASE
-    )
-
+    f"^{re.escape(vehicle_input)}$",
+    re.IGNORECASE
+)
         device = self.db["devices"].find_one({
 
         "$and": [
@@ -2068,9 +2073,9 @@ class DeviceEngine:
 
 
         regex = re.compile(
-        re.escape(vehicle_name),
-        re.IGNORECASE
-    )
+    f"^{re.escape(vehicle_name)}$",
+    re.IGNORECASE
+)
 
 
         query = {
@@ -2196,13 +2201,9 @@ class DeviceEngine:
 
 
         regex = re.compile(
-
-        re.escape(vehicle_name),
-
-        re.IGNORECASE
-
-    )
-
+    f"^{re.escape(vehicle_name)}$",
+    re.IGNORECASE
+)
 
         query = {
 
@@ -2336,12 +2337,9 @@ class DeviceEngine:
 
 
         regex = re.compile(
-
-        re.escape(vehicle_name),
-
-        re.IGNORECASE
-
-    )
+    f"^{re.escape(vehicle_name)}$",
+    re.IGNORECASE
+)
 
 
         query = {
