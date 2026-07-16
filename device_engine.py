@@ -2470,12 +2470,9 @@ class DeviceEngine:
 
 
         regex = re.compile(
-
-        re.escape(vehicle_name),
-
-        re.IGNORECASE
-
-    )
+    f"^{re.escape(vehicle_input)}$",
+    re.IGNORECASE
+)
 
 
         query = {
