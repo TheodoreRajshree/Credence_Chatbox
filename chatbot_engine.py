@@ -422,6 +422,7 @@ def execute_predefined_question(
            "get_superadmin_vehicle_distance_by_date",
            "find_specific_branch_superadmin",
            "find_specific_school_superadmin",
+           "get_specific_trip_report",
         ):
 
             if not input_value:
@@ -674,6 +675,8 @@ def execute_predefined_question(
     )
             elif function_name == "get_specific_trip_report":
 
+                print("TRIP INPUT RECEIVED =", input_value)
+
                 vehicle_input = None
 
                 if isinstance(input_value, dict):
@@ -685,18 +688,16 @@ def execute_predefined_question(
         )
 
                 else:
-
                     vehicle_input = input_value
 
 
-                result = engine_method(
+                print("FINAL VEHICLE INPUT =", vehicle_input)
 
+
+                return engine_method(
         role,
-
         user,
-
         vehicle_input
-
     )
             elif function_name == "get_specific_status_report":
 

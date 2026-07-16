@@ -2031,6 +2031,7 @@ class DeviceEngine:
 #         ]
 
 #     }
+
     def get_specific_trip_report(
     self,
     role,
@@ -2049,11 +2050,8 @@ class DeviceEngine:
         if not vehicle_name:
 
             return {
-
             "success": False,
-
             "message": "Please enter vehicle name or unique ID"
-
         }
 
 
@@ -2062,24 +2060,16 @@ class DeviceEngine:
     # ====================================
 
         trip_filter = get_rbac_filter(
-
         role,
-
         user,
-
         "report_trips",
-
         self.db
-
     )
 
 
         regex = re.compile(
-
         re.escape(vehicle_name),
-
         re.IGNORECASE
-
     )
 
 
@@ -2094,21 +2084,15 @@ class DeviceEngine:
                 "$or": [
 
                     {
-
                         "vehicleName": regex
-
                     },
 
                     {
-
                         "name": regex
-
                     },
 
                     {
-
                         "uniqueId": regex
-
                     }
 
                 ]
@@ -2131,11 +2115,8 @@ class DeviceEngine:
         .find(query)
 
         .sort(
-
             "startTime",
-
             -1
-
         )
 
         .limit(limit)
