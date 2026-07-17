@@ -297,15 +297,14 @@ QUESTIONS = {
 # "intent":"stoppage",
 # "function":"get_all_stoppage_reports"
 # },
-
 # {
 # "id":1220,
 # "question":"Travel summary report",
 # "intent":"travel_summary",
 # "function":"get_all_travel_summaries"
 # },
-
 {
+
   "id": 122080134,
   "question": "Show specific vehicle travel summary",
   "intent": "specific_vehicle_travel_summary",
@@ -1673,71 +1672,60 @@ QUESTIONS = {
 
 
 "driver":[
-
 {
 "id":1,
 "question":"Show my vehicle",
 "intent":"devices",
 "function":"get_driver_device"
 },
-
 {
 "id":2,
 "question":"Show my vehicle location",
 "intent":"vehiclelastpositions",
 "function":"get_all_last_positions"
 },
-
-
 {
 "id":3,
 "question":"Show my distance report",
 "intent":"distance",
 "function":"get_driver_distance_report"
 },
-
 {
 "id":4,
 "question":"Show my trips",
 "intent":"trips",
 "function":"get_driver_trips"
 },
-
 {
 "id":5,
 "question":"Show my vehicle status",
 "intent":"status",
 "function":"get_driver_status_report"
 },
-
 {
 "id":6,
 "question":"Show my travel summary",
 "intent":"travel_summary",
 "function":"get_driver_travel_summary"
 },
-
 {
 "id":7,
 "question":"Show my idle report",
 "intent":"idle",
 "function":"get_driver_idle_report"
 },
-
 {
 "id":8,
 "question":"Show my stoppage report",
 "intent":"stoppage",
 "function":"get_driver_stoppage_report"
 },
-
 {
 "id":9,
 "question":"Show my geofences",
 "intent":"geofences",
 "function":"get_driver_geofences"
 },
-
 {
 "id":10,
 "question":"Show my subscription",
@@ -1750,7 +1738,6 @@ QUESTIONS = {
     "intent": "daily_distance_cache",
     "function": "get_driver_daily_distance"
 },
-
 ]
 , 
 "branchgroup": [
@@ -1758,7 +1745,6 @@ QUESTIONS = {
     "id": 1233,
     "question": "Branchgroup Profile ",
     "function": "get_branch_group_profile_only",
-  
 },
 {
   "id": 1220,
@@ -1794,26 +1780,18 @@ QUESTIONS = {
     }
   ]
 },
-
-
-
-
-
-
   {
     "id": 1222,
     "question": "All Assign branches",
     "function": "get_branch_group_profile",
     "hidden":True,
   },
-
 {
     "id": 1225,
     "question": "Specific branch  Profile",
     "intent": "branchgroup",
     "function": "get_branchgroup_specific_branch",
      "hidden":True,
-
     "fields":[
         {
             "name":"branch_name",
@@ -1822,20 +1800,17 @@ QUESTIONS = {
         }
     ]
 },
- 
  {
     "id": 12311,
     "question": "School Profile",
     "function": "get_assigned_school_branchgroup",
      "hidden":True,
-  
 },
 {
     "id": 123101,
     "question": "All vehicle of Branchgroup",
     "function": "get_branchgroup_devices",
     "hidden":True,
-  
 },
 {
   "id": 88944445,
@@ -1884,11 +1859,6 @@ QUESTIONS = {
     }
   ]
 },
-
-
-
-
-
 {
     "id": 1234956,
     "question": "Show all branch vehicles",
@@ -1927,13 +1897,11 @@ QUESTIONS = {
         }
       ]
     },
-  
 {
     "id": 1234956,
     "label": "Show all branch vehicles",
     "function": "get_branchgroup_branch_vehicles_1",
 },
-   
     {
       "id": 8889,
       "label": "Specific Vehicle of Branch",
@@ -1958,7 +1926,6 @@ QUESTIONS = {
     "id": 12349057,
     "label": "Show all school vehicles",
     "function": "get_branchgroup_school_all_vehicles_1",
-  
 },
     {
       "id": 88913,
@@ -2022,9 +1989,6 @@ QUESTIONS = {
     }
   ]
 },
-
-
-
 {
     "id": 88,
     "question": "Show school vehicle geofence",
@@ -2039,8 +2003,6 @@ QUESTIONS = {
     ]
 },
 
-
-
 {
     "id": 222306,
     "question": "Show branch group geofences",
@@ -2048,26 +2010,12 @@ QUESTIONS = {
     "function": "get_branchgroup_geofences",
     "hidden":True,
 },
-
-
-
-
-
-
  {
     "id": 211996544531,
     "question": "Show all school vehicle geofences",
     "function": "get_branchgroup_school_vehicle_geofences",
     "hidden":True,
 },
-
-
-
-
-
-
-
-
 {
   "id": 222300,
   "question": "Show Geofence Reports",
@@ -2425,23 +2373,6 @@ QUESTIONS = {
     }
   ]
 },
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 {
     "id": 21199255,
     "question": "Show Branchgroup specific vehicle last active",
@@ -2456,10 +2387,6 @@ QUESTIONS = {
         }
     ]
 },
-
-
-
-
 
 {
     "id": 2119957,
@@ -2507,11 +2434,6 @@ QUESTIONS = {
         }
     ]
 },
-
-
-
-
-
 
 {
   "id": 98654001,
@@ -2570,16 +2492,6 @@ QUESTIONS = {
   ]
 },
 
-
-
-
-
-
-
-
-
-
-
 {
   "id": 98654002,
   "question": "Show Vehicle Travel Summary Reports",
@@ -2636,9 +2548,6 @@ QUESTIONS = {
     }
   ]
 },
-
-
-
 {
     "id": 98655514424,
     "question": "Show branch vehicle travel summary  report",
@@ -2685,18 +2594,6 @@ QUESTIONS = {
     }
   ]
 },
-
-
-
-
-
-
-
-
-
-
-
-
 {
     "id": 986555141424,
     "question": "Show branch vehicle last position  report",
@@ -2799,6 +2696,7 @@ QUESTIONS = {
     }
   ]
 }
+
 # {
 #     "id": 4444,
 #     "question": "s",
@@ -2824,21 +2722,12 @@ QUESTIONS = {
 #     "intent": "branchgroup_vehicle_status",
 #     "function": "get_branchgroup_vehicle_last_positions"
 # },
-
 # {
 #     "id": 11111111,
 #     "question": "Show  branchgroup routes ",
 #     "intent": "branchgroup routes",
 #     "function": "get_branchgroup_routes"
-# }
-
-
-
-
-
-
-  
-
-  
+# } 
 ]
 }
+

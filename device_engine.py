@@ -2473,8 +2473,6 @@ class DeviceEngine:
     f"^{re.escape(vehicle_input)}$",
     re.IGNORECASE
 )
-
-
         query = {
 
         "$and": [

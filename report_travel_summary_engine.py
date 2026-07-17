@@ -448,50 +448,63 @@ class ReportTravelSummaryEngine:
     # ALL TRAVEL SUMMARIES
     # =====================================
 
-    def get_all_travel_summaries(
-        self,
-        role,
-        user,
-        limit=200
-    ):
+   
+    
+    
 
+    def get_all_travel_summaries(self, role, user):
 
         summary_filter = get_rbac_filter(
+        role,
+        user,
+        "report_travelsummaries",
+        self.db
+    )
 
-            role,
-            user,
-            "report_travelsummaries",
-            self.db
+        pipeline = [
+        {
+            "$match": summary_filter
+        },
+        {
+            "$sort": {
+                "startTime": -1
+            }
+        },
+        {
+            "$group": {
+                "_id": "$uniqueId",
+                "vehicleName": {
+                    "$first": {
+                        "$ifNull": [
+                            "$vehicleName",
+                            "$name"
+                        ]
+                    }
+                },
+                "travelHistory": {
+                    "$push": "$$ROOT"
+                }
+            }
+        }
+    ]
 
-        )
+        vehicles = []
 
+        for doc in self.db["report_travelsummaries"].aggregate(
+        pipeline,
+        allowDiskUse=True
+    ):
+            vehicles.append({
+            "vehicleName": doc.get("vehicleName"),
+            "uniqueId": str(doc["_id"]),
+            "travelHistory": [self.clean(x) for x in doc["travelHistory"]]
+        })
 
-        reports = list(
-
-            self.db["report_travelsummaries"]
-
-            .find(summary_filter)
-
-            .sort(
-                "startTime",
-                -1
-            )
-
-            .limit(limit)
-
-        )
-
-
-        return [
-
-            self.clean(r)
-
-            for r in reports
-
-        ]
-
-
-
+        return {
+        "success": True,
+        "vehicleCount": len(vehicles),
+        "vehicles": vehicles
+    }
     # =====================================
     # REPORT COUNT
     # =====================================
