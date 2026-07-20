@@ -328,7 +328,8 @@ school_device_engine.get_school_specific_branch_vehicle,
 "get_branch_profile":
     branch_engine.get_branch_profile,
 
-
+"get_branchgroup_school_specific_vehicle_idle_report":
+    branch_group_engine.get_branchgroup_school_specific_vehicle_idle_report,
 "get_branch_vehicles":
     branch_engine.get_branch_vehicles,
 
@@ -766,11 +767,14 @@ branch_group_engine.get_branch_group_profile,
 
 "get_school_idle_report":
     report_idle_engine.get_school_idle_report,
-
-
+"get_branchgroup_idle_report":
+    branch_group_engine.get_branchgroup_idle_report,
+"get_branchgroup_specific_branch_vehicle_idle_report":
+    branch_group_engine.get_branchgroup_specific_branch_vehicle_idle_report,
 "get_branch_idle_report":
     report_idle_engine.get_branch_idle_report,
-
+"get_branchgroup_specific_vehicle_idle_report":
+    branch_group_engine.get_branchgroup_specific_vehicle_idle_report,
 
 "get_driver_idle_report":
     report_idle_engine.get_driver_idle_report,

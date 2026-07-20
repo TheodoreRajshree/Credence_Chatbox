@@ -441,17 +441,9 @@ class ReportTravelSummaryEngine:
             limit
 
         )
-
-
-
     # =====================================
     # ALL TRAVEL SUMMARIES
     # =====================================
-
-   
-    
-    
-
     def get_all_travel_summaries(self, role, user):
 
         summary_filter = get_rbac_filter(

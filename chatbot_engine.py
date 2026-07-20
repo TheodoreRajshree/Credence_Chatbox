@@ -423,6 +423,7 @@ def execute_predefined_question(
            "find_specific_branch_superadmin",
            "find_specific_school_superadmin",
            "get_specific_trip_report",
+        #    "get_branchgroup_idle_report",
         ):
 
             if not input_value:
@@ -483,6 +484,18 @@ def execute_predefined_question(
         user,
         branch_input
     )
+            elif function_name == "get_branchgroup_idle_report":
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        role,
+        user
+
+    )
             elif function_name == "find_specific_school_superadmin":
 
                 if isinstance(input_value, dict):
@@ -507,6 +520,54 @@ def execute_predefined_question(
             elif function_name == "get_school_all_branch_vehicle_status_reports":
 
                 result = engine_method(
+        role,
+        user
+    )
+            elif function_name == "get_branchgroup_school_specific_vehicle_idle_report":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_vehicle_idle_report":
+
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+
+        vehicle_input,
+
+        role,
+
+        user
+
+    )
+            elif function_name == "get_branchgroup_specific_branch_vehicle_idle_report":
+
+                branch_name = input_value.get("branch_name")
+                vehicle_input = input_value.get("vehicle_input")
+
+                result = engine_method(
+        user.get("groupId")
+        or user.get("branchGroupId")
+        or user.get("_id"),
+        branch_name,
+        vehicle_input,
         role,
         user
     )

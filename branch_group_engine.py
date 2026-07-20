@@ -1062,7 +1062,598 @@ class BranchGroupEngine:
         "devices": result
 
     }
-    
+    from bson import ObjectId
+    from rbac import get_rbac_filter
+
+
+  
+
+    def get_branchgroup_idle_report(
+    self,
+    group_id,
+    role,
+    user,
+    limit=100
+):
+
+        print("GROUP ID =", group_id)
+
+    # =====================================
+    # VALIDATE GROUP
+    # =====================================
+
+        if not group_id:
+            return {
+            "success": False,
+            "error": "Branch group id missing"
+        }
+
+        try:
+            group_id = ObjectId(str(group_id))
+        except:
+            return {
+            "success": False,
+            "error": "Invalid group id"
+        }
+
+    # =====================================
+    # FIND BRANCH GROUP
+    # =====================================
+
+        group = self.db.branchgroups.find_one(
+        {
+            "_id": group_id
+        }
+    )
+
+        if not group:
+            return {
+            "success": False,
+            "error": "Branch group not found"
+        }
+
+        school_id = group.get("schoolId")
+        assigned_branches = group.get("AssignedBranch", [])
+
+    # =====================================
+    # CONVERT IDS
+    # =====================================
+
+        try:
+            school_id = ObjectId(str(school_id))
+        except:
+            pass
+
+        branch_ids = []
+
+        for b in assigned_branches:
+            try:
+                branch_ids.append(ObjectId(str(b)))
+            except:
+                branch_ids.append(b)
+
+    # =====================================
+    # FIND DEVICES
+    # =====================================
+
+        device_query = {
+        "$or": [
+            {
+                "schoolId": school_id
+            },
+            {
+                "branchId": {
+                    "$in": branch_ids
+                }
+            }
+        ]
+    }
+
+        devices = list(
+        self.db.devices.find(device_query)
+    )
+
+        if not devices:
+            return {
+            "success": True,
+            "count": 0,
+            "reports": []
+        }
+
+    # =====================================
+    # UNIQUE IDS
+    # =====================================
+
+        unique_ids = []
+
+        for device in devices:
+
+            uid = device.get("uniqueId")
+
+            if uid:
+                unique_ids.extend(
+                self.normalize_unique_id(uid)
+            )
+
+        unique_ids = list(set(unique_ids))
+
+    # =====================================
+    # RBAC FILTER
+    # =====================================
+
+        idle_filter = get_rbac_filter(
+        role,
+        user,
+        "report_idles",
+        self.db
+    )
+
+    # =====================================
+    # FETCH IDLE REPORTS
+    # =====================================
+
+        reports = list(
+
+        self.db.report_idles.find(
+
+            {
+                "$and": [
+
+                    idle_filter,
+
+                    {
+                        "uniqueId": {
+                            "$in": unique_ids
+                        }
+                    }
+
+                ]
+            }
+
+        )
+        .sort("idleStartTime", -1)
+        .limit(limit)
+
+    )
+
+    # =====================================
+    # RETURN
+    # =====================================
+
+        return {
+        "success": True,
+        "count": len(reports),
+        "reports": [
+            self.clean(report)
+            for report in reports
+        ]
+    }
+    def get_branchgroup_specific_vehicle_idle_report(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        print("GROUP ID =", group_id)
+
+    # =====================================
+    # VALIDATE GROUP
+    # =====================================
+
+        if not group_id:
+            return {
+            "success": False,
+            "message": "Branch group id missing"
+        }
+
+        try:
+            group_id = ObjectId(str(group_id))
+        except:
+            return {
+            "success": False,
+            "message": "Invalid Branch Group ID"
+        }
+
+    # =====================================
+    # FIND BRANCH GROUP
+    # =====================================
+
+        group = self.db["branchgroups"].find_one(
+        {
+            "_id": group_id
+        }
+    )
+
+        if not group:
+            return {
+            "success": False,
+            "message": "Branch Group not found."
+        }
+
+        school_id = group.get("schoolId")
+        assigned_branches = group.get("AssignedBranch", [])
+
+    # =====================================
+    # CONVERT IDS
+    # =====================================
+
+        try:
+            school_id = ObjectId(str(school_id))
+        except:
+            pass
+
+        branch_ids = []
+
+        for b in assigned_branches:
+            try:
+                branch_ids.append(ObjectId(str(b)))
+            except:
+                branch_ids.append(b)
+
+    # =====================================
+    # FIND DEVICES
+    # =====================================
+
+        device_query = {
+
+        "$or": [
+
+            {
+                "schoolId": school_id
+            },
+
+            {
+                "branchId": {
+                    "$in": branch_ids
+                }
+            }
+
+        ]
+
+    }
+
+        devices = list(
+        self.db["devices"].find(device_query)
+    )
+
+        if not devices:
+            return {
+            "success": False,
+            "message": "No vehicles found."
+        }
+
+    # =====================================
+    # FIND SPECIFIC VEHICLE
+    # =====================================
+
+        vehicle_input = (
+        str(vehicle_input)
+        .strip()
+        .lower()
+        .replace(" ", "")
+    )
+
+        matched_device = None
+
+        for device in devices:
+
+            name = (
+            str(device.get("name", ""))
+            .lower()
+            .replace(" ", "")
+        )
+
+            uid = (
+            str(device.get("uniqueId", ""))
+            .lower()
+            .replace(" ", "")
+        )
+
+            if vehicle_input == name or vehicle_input == uid:
+
+                matched_device = device
+                break
+
+        if not matched_device:
+            return {
+            "success": False,
+            "message": "Vehicle not found in your Branch Group."
+        }
+
+    # =====================================
+    # UNIQUE IDS
+    # =====================================
+
+        unique_ids = self.normalize_unique_id(
+        matched_device.get("uniqueId")
+    )
+
+    # =====================================
+    # RBAC FILTER
+    # =====================================
+
+        idle_filter = get_rbac_filter(
+        role,
+        user,
+        "report_idles",
+        self.db
+    )
+
+    # =====================================
+    # FETCH REPORTS
+    # =====================================
+
+        reports = list(
+
+        self.db["report_idles"]
+
+        .find({
+
+            "$and": [
+
+                idle_filter,
+
+                {
+                    "uniqueId": {
+                        "$in": unique_ids
+                    }
+                }
+
+            ]
+
+        })
+
+        .sort("idleStartTime", -1)
+
+        .limit(limit)
+
+    )
+
+    # =====================================
+    # RETURN
+    # =====================================
+
+        return {
+
+        "success": True,
+
+        "vehicleName": matched_device.get("name"),
+
+        "uniqueId": matched_device.get("uniqueId"),
+
+        "count": len(reports),
+
+        "reports": [
+            self.clean(report)
+            for report in reports
+        ]
+
+    }
+        
+    def get_branchgroup_specific_branch_vehicle_idle_report(
+    self,
+    group_id,
+    branch_name,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+    # =====================================
+    # GET GROUP ID
+    # =====================================
+
+        if not group_id:
+            group_id = (
+            user.get("groupId")
+            or user.get("branchGroupId")
+            or user.get("_id")
+        )
+
+        try:
+            group_id = ObjectId(str(group_id))
+        except:
+            return {
+            "success": False,
+            "message": "Invalid Branch Group ID"
+        }
+
+    # =====================================
+    # FIND BRANCH GROUP
+    # =====================================
+
+        group = self.db["branchgroups"].find_one({
+        "_id": group_id
+    })
+
+        if not group:
+            return {
+            "success": False,
+            "message": "Branch Group not found."
+        }
+
+        assigned_branches = group.get("AssignedBranch", [])
+
+    # =====================================
+    # FIND BRANCH
+    # =====================================
+
+        branch = self.db["branches"].find_one({
+
+        "$or": [
+
+            {
+                "branchName": {
+                    "$regex": branch_name,
+                    "$options": "i"
+                }
+            },
+
+            {
+                "name": {
+                    "$regex": branch_name,
+                    "$options": "i"
+                }
+            },
+
+            {
+                "username": {
+                    "$regex": branch_name,
+                    "$options": "i"
+                }
+            }
+
+        ]
+
+    })
+
+        if not branch:
+            return {
+            "success": False,
+            "message": "Branch not found."
+        }
+
+        branch_id = branch["_id"]
+
+    # =====================================
+    # CHECK BRANCH BELONGS TO GROUP
+    # =====================================
+
+        if str(branch_id) not in [str(x) for x in assigned_branches]:
+            return {
+            "success": False,
+            "message": "This branch is not assigned to your Branch Group."
+        }
+
+    # =====================================
+    # FIND VEHICLE
+    # =====================================
+
+        vehicle_input = (
+        str(vehicle_input)
+        .strip()
+        .lower()
+        .replace(" ", "")
+    )
+
+        devices = list(
+
+        self.db["devices"].find({
+            "branchId": branch_id
+        })
+
+    )
+
+        matched_device = None
+
+        for device in devices:
+
+            name = (
+            str(device.get("name", ""))
+            .lower()
+            .replace(" ", "")
+        )
+
+            uid = (
+            str(device.get("uniqueId", ""))
+            .lower()
+            .replace(" ", "")
+        )
+
+            if vehicle_input in name or vehicle_input == uid:
+                matched_device = device
+                break
+
+        if not matched_device:
+            return {
+            "success": False,
+            "message": "Vehicle not found in this branch."
+        }
+
+    # =====================================
+    # UNIQUE IDS
+    # =====================================
+
+        unique_ids = self.normalize_unique_id(
+        matched_device.get("uniqueId")
+    )
+
+    # =====================================
+    # RBAC FILTER
+    # =====================================
+
+        idle_filter = get_rbac_filter(
+        role,
+        user,
+        "report_idles",
+        self.db
+    )
+
+    # =====================================
+    # FETCH REPORTS
+    # =====================================
+
+        reports = list(
+
+        self.db["report_idles"]
+
+        .find({
+
+            "$and": [
+
+                idle_filter,
+
+                {
+                    "uniqueId": {
+                        "$in": unique_ids
+                    }
+                }
+
+            ]
+
+        })
+
+        .sort("idleStartTime", -1)
+
+        .limit(limit)
+
+    )
+
+    # =====================================
+    # RETURN
+    # =====================================
+
+        return {
+
+        "success": True,
+
+        "branchGroup": {
+            "groupId": str(group["_id"]),
+            "branchGroupName": group.get("branchGroupName")
+        },
+
+        "branch": {
+            "branchId": str(branch["_id"]),
+            "branchName": branch.get("branchName") or branch.get("name")
+        },
+
+        "vehicle": {
+            "vehicleName": matched_device.get("name"),
+            "uniqueId": matched_device.get("uniqueId")
+        },
+
+        "count": len(reports),
+
+        "reports": [
+            self.clean(report)
+            for report in reports
+        ]
+
+    }
     def get_branchgroup_vehicle_school_branch(
     self,
     group_id,
@@ -9853,6 +10444,140 @@ class BranchGroupEngine:
                 "outdated": position.get("outdated")
 
             }
+
+        }
+
+        except Exception as e:
+
+            return {
+
+            "success": False,
+
+            "error": str(e)
+
+        }
+    def get_branchgroup_school_specific_vehicle_idle_report(
+    self,
+    group_id,
+    vehicle_input,
+    role,
+    user,
+    limit=100
+):
+
+        try:
+
+        # =====================================
+        # FIND SCHOOL VEHICLE UNDER BRANCHGROUP
+        # =====================================
+
+            result = self.get_branchgroup_school_vehicle(
+            vehicle_input,
+            role,
+            user
+        )
+
+            if not result["success"]:
+                return result
+
+            vehicle = result["vehicle"]
+            school = result["school"]
+            branch = result["branch"]
+
+        # =====================================
+        # NORMALIZE UNIQUE ID
+        # =====================================
+
+            unique_ids = self.normalize_unique_id(
+            vehicle["uniqueId"]
+        )
+
+        # =====================================
+        # FETCH IDLE REPORTS
+        # =====================================
+
+            idle_reports = list(
+
+            self.db["report_idles"].find(
+
+                {
+
+                    "$and": [
+
+                        get_rbac_filter(
+                            role,
+                            user,
+                            "report_idles",
+                            self.db
+                        ),
+
+                        {
+                            "uniqueId": {
+                                "$in": unique_ids
+                            }
+                        }
+
+                    ]
+
+                }
+
+            )
+            .sort("idleStartTime", -1)
+            .limit(limit)
+
+        )
+
+            if not idle_reports:
+                return {
+                "success": False,
+                "message": "No idle report found."
+            }
+
+        # =====================================
+        # RESPONSE
+        # =====================================
+
+            return {
+
+            "success": True,
+
+            "branchGroup": {
+
+                "groupId": str(group_id),
+
+                "branchGroupName": user.get("username")
+
+            },
+
+            "school": school,
+
+            "branch": branch,
+
+            "vehicle": {
+
+                "deviceId": vehicle.get("deviceId"),
+
+                "vehicleName": vehicle.get("vehicleName"),
+
+                "deviceNumber": vehicle.get("deviceNumber"),
+
+                "uniqueId": vehicle.get("uniqueId"),
+
+                "model": vehicle.get("model"),
+
+                "category": vehicle.get("category")
+
+            },
+
+            "count": len(idle_reports),
+
+            "reports": [
+
+                self.clean(report)
+
+                for report in idle_reports
+
+            ]
 
         }
 
