@@ -1,29 +1,19 @@
 from bson import ObjectId
-
-
 class FleetAnalyticsEngine:
-
     def __init__(self, db):
         self.db = db
-
     def get_vehicle_analytics(self, unique_id):
-
         analytics = {
             "uniqueId": unique_id
         }
-
         try:
-
             # ==========================
             # DEVICE INFO
             # ==========================
-
             device = self.db["devices"].find_one(
                 {"uniqueId": str(unique_id)}
             )
-
             if device:
-
                 analytics["device"] = {
                     "vehicleName": device.get("name"),
                     "status": device.get("status"),
@@ -40,19 +30,15 @@ class FleetAnalyticsEngine:
                         "TotalKmOfDevice"
                     )
                 }
-
             # ==========================
             # LAST POSITION
             # ==========================
-
             position = self.db[
                 "vehiclelastpositions"
             ].find_one(
                 {"uniqueId": str(unique_id)}
             )
-
             if position:
-
                 analytics["last_position"] = {
                     "latitude": position.get("latitude"),
                     "longitude": position.get("longitude"),
@@ -64,7 +50,6 @@ class FleetAnalyticsEngine:
                         position.get("lastUpdate")
                     )
                 }
-
             # ==========================
             # DISTANCE CACHE
             # ==========================
@@ -74,9 +59,7 @@ class FleetAnalyticsEngine:
             ].find_one(
                 {"uniqueId": str(unique_id)}
             )
-
             if distance:
-
                 analytics["distance"] = {
                     "startOdo": distance.get(
                         "startOdo"
@@ -85,20 +68,16 @@ class FleetAnalyticsEngine:
                         "totalKm"
                     )
                 }
-
             # ==========================
             # TRAVEL SUMMARY
             # ==========================
-
             travel = self.db[
                 "report_travelsummaries"
             ].find_one(
                 {"uniqueId": str(unique_id)},
                 sort=[("createdAt", -1)]
             )
-
             if travel:
-
                 analytics["travel_summary"] = {
                     "distance": travel.get(
                         "distance"
@@ -119,20 +98,16 @@ class FleetAnalyticsEngine:
                         "stopTime"
                     )
                 }
-
             # ==========================
             # LATEST TRIP
             # ==========================
-
             trip = self.db[
                 "report_trips"
             ].find_one(
                 {"uniqueId": str(unique_id)},
                 sort=[("startTime", -1)]
             )
-
             if trip:
-
                 analytics["latest_trip"] = {
                     "distance": trip.get(
                         "distance"
@@ -153,20 +128,16 @@ class FleetAnalyticsEngine:
                         "endLongitude"
                     )
                 }
-
             # ==========================
             # VEHICLE STATUS
             # ==========================
-
             status = self.db[
                 "report_statuses"
             ].find_one(
                 {"uniqueId": str(unique_id)},
                 sort=[("endDateTime", -1)]
             )
-
             if status:
-
                 analytics["status"] = {
                     "vehicleStatus":
                         status.get(
@@ -175,40 +146,32 @@ class FleetAnalyticsEngine:
                     "time":
                         status.get("time")
                 }
-
             # ==========================
             # IDLE REPORT
             # ==========================
-
             idle = self.db[
                 "report_idles"
             ].find_one(
                 {"uniqueId": str(unique_id)},
                 sort=[("idleEndTime", -1)]
             )
-
             if idle:
-
                 analytics["idle"] = {
                     "duration":
                         idle.get(
                             "duration"
                         )
                 }
-
             # ==========================
             # STOPPAGE REPORT
             # ==========================
-
             stop = self.db[
                 "report_stopages"
             ].find_one(
                 {"uniqueId": str(unique_id)},
                 sort=[("departureTime", -1)]
             )
-
             if stop:
-
                 analytics["stoppage"] = {
                     "arrivalTime":
                         str(
@@ -223,19 +186,15 @@ class FleetAnalyticsEngine:
                             )
                         )
                 }
-
             # ==========================
             # SUBSCRIPTION
             # ==========================
-
             subscription = self.db[
                 "devicesubscriptions"
             ].find_one(
                 {"uniqueId": str(unique_id)}
             )
-
             if subscription:
-
                 analytics["subscription"] = {
                     "status":
                         subscription.get(
@@ -256,20 +215,16 @@ class FleetAnalyticsEngine:
                             "paidByRole"
                         )
                 }
-
             # ==========================
             # GEOFENCE EVENTS
             # ==========================
-
             geo = self.db[
                 "geofencereports"
             ].find_one(
                 {"uniqueId": str(unique_id)},
                 sort=[("timestamp", -1)]
             )
-
             if geo:
-
                 analytics["geofence"] = {
                     "eventType":
                         geo.get(
@@ -281,21 +236,17 @@ class FleetAnalyticsEngine:
                                 "timestamp"
                             )
                         )
-                }
-
+                }    
             # ==========================
             # HISTORY
             # ==========================
-
             history = self.db[
                 "histories"
             ].find_one(
                 {"uniqueId": str(unique_id)},
                 sort=[("serverTime", -1)]
             )
-
             if history:
-
                 analytics["history"] = {
                     "latitude":
                         history.get(
@@ -310,9 +261,19 @@ class FleetAnalyticsEngine:
                             "speed"
                         )
                 }
-
         except Exception as e:
-
             analytics["error"] = str(e)
-
         return analytics
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

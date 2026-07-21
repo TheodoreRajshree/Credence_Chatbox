@@ -3021,7 +3021,9 @@ class SchoolEngine:
     # =====================================
     # VALIDATE INPUT
     # =====================================
-        school_name = str(input_value or "").strip()
+        import re
+
+        school_name = re.sub(r"\s+", "", str(input_value or "").strip()).lower()
 
         if not school_name:
             return {
@@ -3076,21 +3078,15 @@ class SchoolEngine:
     # SEARCH BY NAME / USERNAME (EXACT MATCH)
     # =====================================
         if school is None:
-            regex = re.compile(
-            f"^{re.escape(school_name)}$",
-            re.IGNORECASE
-        )
+            school = None
 
-            school = self.db["schools"].find_one(
-            {
-                **base_filter,
-                "$or": [
-                    {"schoolName": regex},
-                    {"username": regex}
-                ]
-            },
-            projection
-        )
+            for s in self.db["schools"].find(base_filter, projection):
+                db_school = re.sub(r"\s+", "", s.get("schoolName", "")).lower()
+                db_username = re.sub(r"\s+", "", s.get("username", "")).lower()
+
+                if db_school == school_name or db_username == school_name:
+                    school = s
+                    break
 
     # =====================================
     # SCHOOL NOT FOUND

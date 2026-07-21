@@ -303,6 +303,25 @@ def execute_engine(engine_method, role, user, message=None):
             args.append(
                 user
             )
+        elif name == "from_date":
+
+            if isinstance(message, dict):
+                args.append(message.get("from_date"))
+            else:
+                args.append(None)
+
+
+        elif name == "to_date":
+
+            if isinstance(message, dict):
+                args.append(message.get("to_date"))
+            else:
+                args.append(None)
+
+
+        elif name == "limit":
+
+            args.append(200)
         
 
 
@@ -424,6 +443,8 @@ def execute_predefined_question(
            "find_specific_school_superadmin",
            "get_specific_trip_report",
         #    "get_branchgroup_idle_report",
+        "get_active_branchgroup_vehicles",
+        "get_travel_summary_by_date_range",
         ):
 
             if not input_value:
@@ -464,25 +485,24 @@ def execute_predefined_question(
 
     ) 
             elif function_name == "find_specific_branch_superadmin":
-
                 if isinstance(input_value, dict):
-
                     branch_input = (
             input_value.get("branch_name")
             or input_value.get("branch_id")
         )
-
                 else:
                     branch_input = input_value
-
-
                 print("BRANCH INPUT =", branch_input)
-
-
                 return engine_method(
         role,
         user,
         branch_input
+    )
+            elif function_name == "get_active_branchgroup_vehicles":
+
+                result = engine_method(
+        role,
+        user
     )
             elif function_name == "get_branchgroup_idle_report":
 
@@ -496,22 +516,46 @@ def execute_predefined_question(
         user
 
     )
-            elif function_name == "find_specific_school_superadmin":
+            elif function_name == "get_travel_summary_by_date_range":
 
                 if isinstance(input_value, dict):
 
+                    vehicle_input = (
+            input_value.get("vehicle_input")
+            or input_value.get("vehicle_name")
+            or input_value.get("vehicle")
+        )
+
+                    from_date = input_value.get("from_date")
+                    to_date = input_value.get("to_date")
+
+                else:
+                    vehicle_input = input_value
+                    from_date = None
+                    to_date = None
+
+
+                print("VEHICLE =", vehicle_input)
+                print("FROM DATE =", from_date)
+                print("TO DATE =", to_date)
+
+
+                return engine_method(
+        role,
+        user,
+        vehicle_input,
+        from_date,
+        to_date
+    )
+            elif function_name == "find_specific_school_superadmin":
+                if isinstance(input_value, dict):
                     school_input = (
             input_value.get("school_name")
             or input_value.get("school_id")
         )
-
                 else:
                     school_input = input_value
-
-
                 print("SCHOOL INPUT =", school_input)
-
-
                 return engine_method(
         role,
         user,

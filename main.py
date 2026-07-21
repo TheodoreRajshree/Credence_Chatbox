@@ -69,6 +69,8 @@ class PredefinedChatRequest(BaseModel):
     branchgroup_input: str | None = None
 
     report_date: str | None = None
+    from_date: str | None = None       # ADD
+    to_date: str | None = None  
 # ==========================
 # DB CONNECTION
 # ==========================
@@ -424,6 +426,9 @@ def predefined_chat(
     "branchgroup_input": req.branchgroup_input,
 
     "report_date": req.report_date,
+    "from_date": req.from_date,     # ADD
+
+    "to_date": req.to_date  
 
 }
         print(req.model_dump())

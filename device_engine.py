@@ -2430,6 +2430,7 @@ class DeviceEngine:
         ]
 
     }
+        
     def get_specific_vehicle_geofences(
     self,
     role,
@@ -2905,5 +2906,191 @@ class DeviceEngine:
             "createdAt": report.get("createdAt")
 
         }
+
+    }
+    def get_travel_summary_by_date_range(
+    self,
+    role,
+    user,
+    vehicle_input=None,
+    from_date=None,
+    to_date=None,
+    limit=200
+):
+
+    # ====================================
+    # STEP 1: VALIDATE INPUT
+    # ====================================
+
+        vehicle_name = str(vehicle_input or "").strip()
+
+        if not vehicle_name:
+            return {
+            "success": False,
+            "message": "Please enter vehicle name or unique ID"
+        }
+
+        if not from_date or not to_date:
+            return {
+            "success": False,
+            "message": "Please provide from date and to date"
+        }
+
+
+    # ====================================
+    # STEP 2: CONVERT DATES
+    # ====================================
+
+        # ====================================
+# STEP 2: CONVERT DATES
+# ====================================
+
+        # ====================================
+# STEP 2: CONVERT DATES
+# ====================================
+
+        try:
+            from dateutil import parser
+
+            start_date = parser.parse(
+        str(from_date)
+    )
+
+            end_date = parser.parse(
+        str(to_date)
+    )
+
+    # Include complete end day
+            end_date = end_date.replace(
+        hour=23,
+        minute=59,
+        second=59
+    )
+
+        except Exception:
+            return {
+        "success": False,
+        "message": "Invalid date format"
+    }
+
+    # ====================================
+    # STEP 3: RBAC FILTER
+    # ====================================
+
+        summary_filter = get_rbac_filter(
+        role,
+        user,
+        "report_travelsummaries",
+        self.db
+    ) or {}
+
+
+    # ====================================
+    # STEP 4: VEHICLE MATCH
+    # ====================================
+
+        vehicle_regex = re.compile(
+        re.sub(
+            r"\s+",
+            r"\\s+",
+            re.escape(vehicle_name)
+        ),
+        re.IGNORECASE
+    )
+
+
+        query = {
+
+        "$and": [
+
+            summary_filter,
+
+            {
+
+                "$or": [
+
+                    {
+                        "vehicleName": vehicle_regex
+                    },
+
+                    {
+                        "name": vehicle_regex
+                    },
+
+                    {
+                        "uniqueId": vehicle_regex
+                    }
+
+                ]
+
+            },
+
+            {
+
+                "startTime": {
+
+                    "$gte": start_date,
+
+                    "$lte": end_date
+
+                }
+
+            }
+
+        ]
+
+    }
+
+
+    # ====================================
+    # STEP 5: FETCH REPORTS
+    # ====================================
+
+        reports = list(
+
+        self.db["report_travelsummaries"]
+
+        .find(query)
+
+        .sort(
+            "startTime",
+            -1
+        )
+
+        .limit(limit)
+
+    )
+
+
+        if not reports:
+            return {
+            "success": False,
+            "message": "No travel summary found for selected vehicle and date range"
+        }
+
+
+    # ====================================
+    # STEP 6: RESPONSE
+    # ====================================
+
+        return {
+
+        "success": True,
+
+        "vehicle": vehicle_name,
+
+        "fromDate": from_date,
+
+        "toDate": to_date,
+
+        "count": len(reports),
+
+        "reports": [
+
+            self.clean(report)
+
+            for report in reports
+
+        ]
 
     }

@@ -332,7 +332,8 @@ school_device_engine.get_school_specific_branch_vehicle,
     branch_group_engine.get_branchgroup_school_specific_vehicle_idle_report,
 "get_branch_vehicles":
     branch_engine.get_branch_vehicles,
-
+"get_active_branchgroup_vehicles":
+    branch_group_engine.get_active_branchgroup_vehicles,
 
 "get_branch_vehicle_count":
     branch_engine.get_branch_vehicle_count,
@@ -1198,7 +1199,8 @@ geofence_report_engine.get_school_geofence_reports,
     "get_specific_vehicle_geofences":
     device_engine.get_specific_vehicle_geofences,
 
-
+"get_travel_summary_by_date_range":
+    device_engine.get_travel_summary_by_date_range,
 "get_stopped_vehicle_count":
     vehicle_last_position_engine.get_stopped_vehicle_count,
 

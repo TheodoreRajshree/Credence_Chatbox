@@ -10758,3 +10758,80 @@ class BranchGroupEngine:
             "error": str(e)
 
         }
+    def get_active_branchgroup_vehicles(
+    self,
+    role,
+    user
+):
+
+        vehicles = list(
+
+            self.db["vehiclelastpositions"].find({
+
+            "$and": [
+
+                # User branch group access filter
+                {
+                    "branchGroupId": user.get("branchGroupId")
+                },
+
+                # Only active vehicles
+                {
+                    "speed": {
+                        "$gt": 0
+                    }
+                },
+
+                # Exclude branch vehicles
+                {
+                    "$or": [
+                        {
+                            "branchId": {
+                                "$exists": False
+                            }
+                        },
+                        {
+                            "branchId": None
+                        }
+                    ]
+                },
+
+                # Exclude school vehicles
+                {
+                    "$or": [
+                        {
+                            "schoolId": {
+                                "$exists": False
+                            }
+                        },
+                        {
+                            "schoolId": None
+                        }
+                    ]
+                }
+
+            ]
+
+        })
+
+    )
+
+
+        return [
+
+        {
+            "vehicleName": v.get("name"),
+
+            "uniqueId": v.get("uniqueId"),
+
+            "speed": v.get("speed"),
+
+            "latitude": v.get("latitude"),
+
+            "longitude": v.get("longitude")
+
+        }
+
+        for v in vehicles
+
+    ]
