@@ -181,6 +181,25 @@ QUESTIONS = {
       "placeholder": "MH05GA1153"
     }
   ]
+},
+{
+  "id": 122086015,
+  "question": "Show specific vehicle geofences",
+  "intent": "specific_vehicle_geofences",
+  "function": "get_specific_vehicle_geofences",
+  "fields": [
+    {
+      "name": "vehicle_input",
+      "label": "Enter Vehicle Name or Unique ID",
+      "placeholder": "MH05GA1153"
+    }
+  ]
+},
+{
+"id":1720,
+"question":"Show geofence reports",
+"intent":"geofencereports",
+"function":"get_all_geofence_reports"
 }
 ,
 # {
@@ -345,25 +364,7 @@ QUESTIONS = {
 # "intent":"geofences",
 # "function":"get_all_geofences"
 # },
-{
-  "id": 122086015,
-  "question": "Show specific vehicle geofences",
-  "intent": "specific_vehicle_geofences",
-  "function": "get_specific_vehicle_geofences",
-  "fields": [
-    {
-      "name": "vehicle_input",
-      "label": "Enter Vehicle Name or Unique ID",
-      "placeholder": "MH05GA1153"
-    }
-  ]
-},
-{
-"id":1720,
-"question":"Show geofence reports",
-"intent":"geofencereports",
-"function":"get_all_geofence_reports"
-},
+
 {
 "id":1820,
 "question":"Show subscriptions",
