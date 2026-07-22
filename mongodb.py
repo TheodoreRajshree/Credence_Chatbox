@@ -5,5 +5,5 @@ import os
 load_dotenv()
 
 client = MongoClient(os.getenv("MONGO_URI"))
-
+print("database connected")
 db = client[os.getenv("DB_NAME")]

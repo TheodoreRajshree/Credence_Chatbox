@@ -1140,15 +1140,11 @@ class BranchEngine:
             self.clean(r)
             for r in reports
     ]
-    
-    
-
     def find_branch_superadmin(
     self,
     role,
     user
 ):
-
         try:
 
         # =====================================
@@ -1173,7 +1169,6 @@ class BranchEngine:
             # =====================================
             # DECRYPT PASSWORD
             # =====================================
-
                 password = self.decrypt_password(
                 branch.get("password")
             )
@@ -1255,10 +1250,6 @@ class BranchEngine:
             "error": str(e)
 
         }
-    
-    
-    
-
     def find_specific_branch_superadmin(
     self,
     role,
@@ -1269,13 +1260,11 @@ class BranchEngine:
     # VALIDATE INPUT
     # =====================================
         branch_name = str(input_value or "").strip()
-
         if not branch_name:
             return {
             "success": False,
             "message": "Please enter a Branch Name or Branch ID."
         }
-
     # =====================================
     # RBAC FILTER
     # =====================================
