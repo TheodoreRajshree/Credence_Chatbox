@@ -132,6 +132,7 @@ def home():
 # ==========================
 # LOGIN
 # ==========================
+
 @app.post("/validate-user")
 def validate_user(req: LoginRequest):
 
@@ -146,6 +147,7 @@ def validate_user(req: LoginRequest):
     user = None
     found_collection = None
 
+
     for collection in collections:
 
         user = db[collection].find_one({
@@ -159,22 +161,18 @@ def validate_user(req: LoginRequest):
             "password": req.password
 
         })
-
+        
+        
         if user:
 
             found_collection = collection
-
             break
-
-
     if not user:
 
         raise HTTPException(
             status_code=401,
             detail="Invalid Credentials"
         )
-
-
     # ==========================
     # CREATE IDS
     # ==========================
@@ -192,31 +190,15 @@ def validate_user(req: LoginRequest):
         )
 
     )
-
-
     group_id = (
-
-        user.get("groupId")
-
-        or
-
-        user.get("branchGroupId")
-
-        or
-
-        (
-
-            user["_id"]
-
-            if found_collection == "branchgroups"
-
-            else None
-
-        )
-
+    user.get("groupId")
+    or user.get("branchGroupId")
+    or (
+        user["_id"]
+        if found_collection == "branchgroups"
+        else None
     )
-
-
+)
     branch_id = str(
 
         user.get("branchId")
@@ -224,94 +206,58 @@ def validate_user(req: LoginRequest):
         or
 
         (
-
             user["_id"]
-
             if found_collection == "branches"
-
             else ""
-
         )
 
     )
+
 
 
     # ==========================
     # CREATE TOKEN
     # ==========================
 
-    if found_collection == "branches":
+    token = create_token({
 
-        # Branch user gets only:
-        # _id
-        # username
-        # role
-        # schoolId
+        "_id": str(
+            user["_id"]
+        ),
 
-        token_payload = {
+        "username": user.get(
+            "username",
+            ""
+        ),
 
-            "_id": str(
-                user["_id"]
-            ),
+        # "role": user.get(
+            # "role",
+            # ""
+        # ),
+        "role": (user.get("role") or "").strip().lower(),
 
-            "username": user.get(
-                "username",
-                ""
-            ),
+        "schoolId": school_id,
 
-            "role": (
-                user.get("role") or ""
-            ).strip().lower(),
+        "branchId": branch_id,
+        "groupId": str(group_id) if group_id else None
 
-            "schoolId": school_id
+        # "deviceObjId": str(
+        #     user.get(
+        #         "deviceObjId",
+        #         ""
+        #     )
+        # ),
 
-        }
+        # "routeObjId": str(
+        #     user.get(
+        #         "routeObjId",
+        #         ""
+        #     )
+        # )
 
-    else:
-
-        # School and other users
-        # keep the existing token structure
-
-        token_payload = {
-
-            "_id": str(
-                user["_id"]
-            ),
-
-            "username": user.get(
-                "username",
-                ""
-            ),
-
-            "role": (
-                user.get("role") or ""
-            ).strip().lower(),
-
-            "schoolId": school_id,
-
-            "branchId": branch_id,
-
-            "groupId": (
-                str(group_id)
-                if group_id
-                else None
-            )
-
-        }
+    })
 
 
-    # ==========================
-    # CREATE JWT TOKEN
-    # ==========================
-
-    token = create_token(
-        token_payload
-    )
-
-
-    # ==========================
-    # RETURN RESPONSE
-    # ==========================
 
     return {
 
@@ -343,23 +289,50 @@ def validate_user(req: LoginRequest):
 
         "schoolId": school_id,
 
-        "branchId": branch_id,
+        "branchId": branch_id
 
-        "deviceObjId": str(
-            user.get(
-                "deviceObjId",
-                ""
-            )
-        ),
+        # "deviceObjId": str(
+        #     user.get(
+        #         "deviceObjId",
+        #         ""
+        #     )
+        # ),
 
-        "routeObjId": str(
-            user.get(
-                "routeObjId",
-                ""
-            )
-        )
-
+        # "routeObjId": str(
+        #     user.get(
+        #         "routeObjId",
+        #         ""
+        #     )
+        # )
     }
+# @app.post("/questions")
+# def get_questions(req: QuestionRequest):
+
+#     try:
+
+#         user = verify_token(req.token)
+
+#         role = (user.get("role") or "").lower()
+#         # role = (user.get("role") or "").strip().lower()
+#         print("ROLE:", role)
+#         print("AVAILABLE KEYS:", QUESTIONS.keys())
+#         return {
+
+#             "success": True,
+
+#             "role": role,
+
+#             "questions": QUESTIONS.get(role, [])
+
+#         }
+    
+
+#     except Exception as e:
+
+#         raise HTTPException(
+#             status_code=401,
+#             detail=str(e)
+#         )
 
 
 @app.post("/questions")
