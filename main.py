@@ -116,7 +116,36 @@ def serialize_document(doc):
         return result
 
     return doc
+def convert_objectids_to_strings(value):
 
+    if isinstance(value, ObjectId):
+
+        return str(value)
+
+
+    if isinstance(value, list):
+
+        return [
+
+            convert_objectids_to_strings(item)
+
+            for item in value
+
+        ]
+
+
+    if isinstance(value, dict):
+
+        return {
+
+            key: convert_objectids_to_strings(val)
+
+            for key, val in value.items()
+
+        }
+
+
+    return value
 # ==========================
 # HOME
 # ==========================
@@ -240,65 +269,173 @@ def validate_user(req: LoginRequest):
     # CREATE TOKEN
     # ==========================
 
+    # if found_collection == "branches":
+
+    #     # Branch user gets only:
+    #     # _id
+    #     # username
+    #     # role
+    #     # schoolId
+
+    #     token_payload = {
+
+    #         "id": str(
+    #             user["_id"]
+    #         ),
+
+    #         "username": user.get(
+    #             "username",
+    #             ""
+    #         ),
+
+    #         "role": (
+    #             user.get("role") or ""
+    #         ).strip().lower(),
+
+    #         "schoolId": school_id
+
+    #     }
+
+    # else:
+
+    #     # School and other users
+    #     # keep the existing token structure
+
+    #     token_payload = {
+
+    #         "_id": str(
+    #             user["_id"]
+    #         ),
+
+    #         "username": user.get(
+    #             "username",
+    #             ""
+    #         ),
+
+    #         "role": (
+    #             user.get("role") or ""
+    #         ).strip().lower(),
+
+    #         "schoolId": school_id,
+
+    #         "branchId": branch_id,
+
+    #         "groupId": (
+    #             str(group_id)
+    #             if group_id
+    #             else None
+    #         )
+
+    #     }
+     # ==========================
+# CREATE TOKEN
+# ==========================
+
     if found_collection == "branches":
 
-        # Branch user gets only:
-        # _id
-        # username
-        # role
-        # schoolId
+    # ==========================
+    # BRANCH TOKEN
+    # ==========================
 
         token_payload = {
 
-            "id": str(
-                user["_id"]
-            ),
+        "id": str(
+            user["_id"]
+        ),
 
-            "username": user.get(
-                "username",
-                ""
-            ),
+        "username": user.get(
+            "username",
+            ""
+        ),
 
-            "role": (
-                user.get("role") or ""
-            ).strip().lower(),
+        "role": (
+            user.get("role") or ""
+        ).strip().lower(),
 
-            "schoolId": school_id
+        "schoolId": school_id
 
-        }
+    }
+
+
+    elif found_collection == "branchgroups":
+
+    # ==================================
+    # BRANCHGROUP TOKEN
+    # ==================================
+
+        assigned_branches = (
+        user.get(
+            "AssignedBranch",
+            []
+        )
+        or []
+    )
+
+
+    # Convert ObjectId values to strings
+
+        assigned_branches = (
+        convert_objectids_to_strings(
+            assigned_branches
+        )
+    )
+
+
+        token_payload = {
+
+        "id": str(
+            user["_id"]
+        ),
+
+        "username": user.get(
+            "username",
+            ""
+        ),
+
+        "role": (
+            user.get("role") or ""
+        ).strip().lower(),
+
+        "schoolId": school_id,
+
+        "AssignedBranch": assigned_branches
+
+    }
+
 
     else:
 
-        # School and other users
-        # keep the existing token structure
+    # ==========================
+    # OTHER USERS
+    # KEEP OLD TOKEN
+    # ==========================
 
         token_payload = {
 
-            "_id": str(
-                user["_id"]
-            ),
+        "_id": str(
+            user["_id"]
+        ),
 
-            "username": user.get(
-                "username",
-                ""
-            ),
+        "username": user.get(
+            "username",
+            ""
+        ),
 
-            "role": (
-                user.get("role") or ""
-            ).strip().lower(),
+        "role": (
+            user.get("role") or ""
+        ).strip().lower(),
 
-            "schoolId": school_id,
+        "schoolId": school_id,
 
-            "branchId": branch_id,
+        "branchId": branch_id,
 
-            "groupId": (
-                str(group_id)
-                if group_id
-                else None
-            )
+        "groupId": (
+            str(group_id)
+            if group_id
+            else None
+        )
 
-        }
-
+    }
 
     # ==========================
     # CREATE JWT TOKEN
@@ -479,29 +616,84 @@ def predefined_chat(
         # Therefore recreate branchId
         # internally for existing code.
 
+    #     if role == "branch":
+
+    #         user["branchId"] = user.get(
+    #             "id"
+    #         )
+    #         user["_id"] = user.get(
+    #     "id"
+    # )
+
+
+    #     # ==================================
+    #     # SET GROUP ID
+    #     # ==================================
+
+    #     user["groupId"] = (
+
+    #         user.get("groupId")
+
+    #         or user.get("branchGroupId")
+
+    #         or user.get("_id")
+
+    #     )
+          # ==================================
+# USER ID NORMALIZATION
+# ==================================
+
         if role == "branch":
 
+    # JWT "id" = branch ID
+
             user["branchId"] = user.get(
-                "id"
-            )
+        "id"
+    )
+
+    # For old backend code
+
             user["_id"] = user.get(
         "id"
     )
 
 
-        # ==================================
-        # SET GROUP ID
-        # ==================================
+        elif role == "branchgroup":
 
-        user["groupId"] = (
+    # JWT "id" = branchgroup ID
 
-            user.get("groupId")
+            user["groupId"] = user.get(
+        "id"
+    )
 
-            or user.get("branchGroupId")
+    # For old backend code
 
-            or user.get("_id")
+            user["_id"] = user.get(
+        "id"
+    )
 
-        )
+
+# ==================================
+# GROUP ID
+# ==================================
+
+        if role == "branchgroup":
+
+            user["groupId"] = user.get(
+        "id"
+    )
+
+        else:
+
+            user["groupId"] = (
+
+        user.get("groupId")
+
+        or user.get("branchGroupId")
+
+        or user.get("_id")
+
+    )
 
 
         # ==================================

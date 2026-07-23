@@ -6,6 +6,9 @@ from branch_engine import BranchEngine
 from device_engine import DeviceEngine
 from vehicle_km_engine import VehicleKmEngine
 from report_status_engine import ReportStatusEngine
+from datetime import datetime, timedelta, timezone
+from bson import ObjectId
+import re
 class BranchGroupEngine:
 
     def __init__(self, db):
@@ -1998,6 +2001,7 @@ class BranchGroupEngine:
     }
     
 
+    
     def get_branchgroup_vehicle_today_distance(
     self,
     group_id,
@@ -2009,320 +2013,934 @@ class BranchGroupEngine:
 
 
     # =====================================
-    # VALIDATE GROUP
+    # 1. VALIDATE GROUP ID
     # =====================================
 
         if not group_id:
 
             return {
+
             "success": False,
+
             "error": "Branch group id missing"
+
         }
 
 
         try:
 
-            group_id = ObjectId(
+            group_object_id = ObjectId(
+
             str(group_id)
+
         )
 
-        except:
+        except Exception:
 
             return {
+
             "success": False,
+
             "error": "Invalid group id"
+
         }
 
 
-
     # =====================================
-    # FIND BRANCH GROUP
+    # 2. FIND BRANCH GROUP
     # =====================================
 
-        group = self.db.branchgroups.find_one(
-        {
-            "_id": group_id
-        }
-    )
+        group = self.db["branchgroups"].find_one({
+
+        "_id": group_object_id
+
+    })
 
 
         if not group:
 
             return {
-            "success":False,
-            "error":"Branch group not found"
+
+            "success": False,
+
+            "error": "Branch group not found"
+
         }
 
 
+    # =====================================
+    # 3. SCHOOL ID
+    # =====================================
 
         school_id = group.get(
+
         "schoolId"
+
     )
 
+
+        if school_id:
+
+            try:
+
+                school_id = ObjectId(
+
+                str(school_id)
+
+            )
+
+            except Exception:
+
+                pass
+
+
+    # =====================================
+    # 4. ASSIGNED BRANCHES
+    # =====================================
 
         assigned_branches = group.get(
+
         "AssignedBranch",
+
         []
+
     )
 
 
+        if not isinstance(
 
-        try:
+            assigned_branches,
 
-            school_id = ObjectId(
-            str(school_id)
-        )
+        list
 
-        except:
+    ):
 
-            pass
+            assigned_branches = [
 
+            assigned_branches
 
-
-        branch_ids=[]
+        ]
 
 
-        for b in assigned_branches:
+        branch_ids = []
+
+
+        for branch_id in assigned_branches:
 
             try:
 
                 branch_ids.append(
-                ObjectId(str(b))
+
+                ObjectId(
+
+                    str(branch_id)
+
+                )
+
             )
 
-            except:
+            except Exception:
 
-                branch_ids.append(b)
+                branch_ids.append(
 
+                branch_id
+
+            )
 
 
     # =====================================
-    # GET ALL DEVICES
-    # SCHOOL + ASSIGNED BRANCH
+    # 5. FIND DEVICES
     # =====================================
 
+        device_query = {
 
-        devices = list(
-        self.db.devices.find(
+
+        "$and": [
 
             {
 
-            "$or":[
+                "schoolId": school_id
 
-                {
-                    "schoolId":school_id
-                },
+            },
 
-                {
-                    "branchId":
-                    {
-                        "$in":branch_ids
-                    }
+            {
+
+                "branchId": {
+
+                    "$in": branch_ids
+
                 }
-
-            ]
 
             }
 
-        )
-    )
+        ]
 
+    }
+
+
+        devices = list(
+
+        self.db["devices"].find(
+
+            device_query
+
+        )
+
+    )
 
 
         if not devices:
 
             return {
 
-            "success":True,
+            "success": True,
 
-            "count":0,
+            "date": datetime.now(
 
-            "vehicles":[]
+                timezone(
+
+                    timedelta(
+
+                        hours=5,
+
+                        minutes=30
+
+                    )
+
+                )
+
+            ).strftime(
+
+                "%Y-%m-%d"
+
+            ),
+
+            "count": 0,
+
+            "vehicles": []
 
         }
 
 
+    # =====================================
+    # 6. IST TODAY RANGE
+    # =====================================
 
         IST = timezone(
-        timedelta(hours=5,minutes=30)
+
+        timedelta(
+
+            hours=5,
+
+            minutes=30
+
+        )
+
     )
 
 
-        now=datetime.now(IST)
+        now = datetime.now(
+
+        IST
+
+    )
 
 
-        start = now.replace(
+        today_start = now.replace(
+
         hour=0,
+
         minute=0,
+
         second=0,
+
         microsecond=0
+
     )
 
 
-        end = now.replace(
+        today_end = now.replace(
+
         hour=23,
+
         minute=59,
+
         second=59,
+
         microsecond=999999
+
     )
-
-
-
-        output=[]
-
 
 
     # =====================================
-    # LOOP ALL VEHICLES
+    # 7. HISTORY RBAC FILTER
+    # =====================================
+
+        history_rbac_filter = get_rbac_filter(
+
+        role,
+
+        user,
+
+        "histories",
+
+        self.db
+
+    )
+
+
+        output = []
+
+
+    # =====================================
+    # 8. LOOP THROUGH ALL VEHICLES
     # =====================================
 
         for device in devices:
 
 
             unique_id = device.get(
+
             "uniqueId"
+
         )
 
 
             if not unique_id:
+
                 continue
 
 
+            unique_ids = self.normalize_unique_id(
 
-            history_query = {
+            unique_id
 
-
-            "$and":[
-
-
-                get_rbac_filter(
-                    role,
-                    user,
-                    "histories",
-                    self.db
-                ),
-
-
-                {
-                    "uniqueId":unique_id
-                },
-
-
-                {
-                    "createdAt":
-                    {
-                        "$gte":start,
-                        "$lte":end
-                    }
-                },
-
-
-                {
-                    "attributes.totalDistance":
-                    {
-                        "$ne":None
-                    }
-                }
-
-
-            ]
-
-        }
-
-
-
-            history=list(
-            self.db.histories.find(
-                history_query
-            )
-            .sort(
-                "createdAt",
-                1
-            )
         )
 
 
+            if not unique_ids:
 
-            if not history:
                 continue
 
+
+        # =================================
+        # 9. LAST ODOMETER BEFORE TODAY
+        # =================================
+
+            previous_record = (
+
+            self.db["histories"].find_one(
+
+                {
+
+                    "$and": [
+
+                        history_rbac_filter,
+
+                        {
+
+                            "uniqueId": {
+
+                                "$in": unique_ids
+
+                            }
+
+                        },
+
+                        {
+
+                            "attributes.totalDistance": {
+
+                                "$ne": None
+
+                            }
+
+                        },
+
+                        {
+
+                            "createdAt": {
+
+                                "$lt": today_start
+
+                            }
+
+                        }
+
+                    ]
+
+                },
+
+                sort=[
+
+                    (
+
+                        "createdAt",
+
+                        -1
+
+                    )
+
+                ]
+
+            )
+
+        )
+
+
+        # =================================
+        # 10. LATEST ODOMETER TODAY
+        # =================================
+
+            today_last_record = (
+
+            self.db["histories"].find_one(
+
+                {
+
+                    "$and": [
+
+                        history_rbac_filter,
+
+                        {
+
+                            "uniqueId": {
+
+                                "$in": unique_ids
+
+                            }
+
+                        },
+
+                        {
+
+                            "attributes.totalDistance": {
+
+                                "$ne": None
+
+                            }
+
+                        },
+
+                        {
+
+                            "createdAt": {
+
+                                "$gte": today_start,
+
+                                "$lte": today_end
+
+                            }
+
+                        }
+
+                    ]
+
+                },
+
+                sort=[
+
+                    (
+
+                        "createdAt",
+
+                        -1
+
+                    )
+
+                ]
+
+            )
+
+        )
+
+
+        # =================================
+        # 11. VEHICLE NAME
+        # =================================
+
+            vehicle_name = (
+
+            device.get(
+
+                "name"
+
+            )
+
+            or device.get(
+
+                "vehicleName"
+
+            )
+
+            or device.get(
+
+                "vehicleNumber"
+
+            )
+
+            or device.get(
+
+                "vehicle_name"
+
+            )
+
+            or "N/A"
+
+        )
+
+
+        # =================================
+        # 12. NO HISTORY TODAY
+        # =================================
+
+            if not today_last_record:
+
+                output.append({
+
+                "vehicleName": vehicle_name,
+
+                "uniqueId": device.get(
+
+                    "uniqueId"
+
+                ),
+
+                "source": "branch",
+
+                "schoolId": (
+
+                    str(
+
+                        device.get(
+
+                            "schoolId"
+
+                        )
+
+                    )
+
+                    if device.get(
+
+                        "schoolId"
+
+                    )
+
+                    else None
+
+                ),
+
+                "branchId": (
+
+                    str(
+
+                        device.get(
+
+                            "branchId"
+
+                        )
+
+                    )
+
+                    if device.get(
+
+                        "branchId"
+
+                    )
+
+                    else None
+
+                ),
+
+                "todayDistanceKm": 0,
+
+                "startOdometerKm": None,
+
+                "endOdometerKm": None,
+
+                "firstRecord": None,
+
+                "lastRecord": None,
+
+                "message": (
+
+                    "No history found for today."
+
+                )
+
+            })
+
+
+                continue
+
+
+        # =================================
+        # 13. START ODOMETER
+        # =================================
+
+            if previous_record:
+
+                start_distance = (
+
+                previous_record[
+
+                    "attributes"
+
+                ][
+
+                    "totalDistance"
+
+                ]
+
+                / 1000
+
+            )
+
+
+                first_record = (
+
+                previous_record.get(
+
+                    "createdAt"
+
+                )
+
+            )
+
+
+            else:
+
+
+            # =============================
+            # FIRST RECORD TODAY
+            # =============================
+
+                first_today_record = (
+
+                self.db["histories"].find_one(
+
+                    {
+
+                        "$and": [
+
+                            history_rbac_filter,
+
+                            {
+
+                                "uniqueId": {
+
+                                    "$in": unique_ids
+
+                                }
+
+                            },
+
+                            {
+
+                                "attributes.totalDistance": {
+
+                                    "$ne": None
+
+                                }
+
+                            },
+
+                            {
+
+                                "createdAt": {
+
+                                    "$gte": today_start,
+
+                                    "$lte": today_end
+
+                                }
+
+                            }
+
+                        ]
+
+                    },
+
+                    sort=[
+
+                        (
+
+                            "createdAt",
+
+                            1
+
+                        )
+
+                    ]
+
+                )
+
+            )
+
+
+                if not first_today_record:
+
+                    output.append({
+
+                    "vehicleName": vehicle_name,
+
+                    "uniqueId": device.get(
+
+                        "uniqueId"
+
+                    ),
+
+                    "source": "branch",
+
+                    "schoolId": (
+
+                        str(
+
+                            device.get(
+
+                                "schoolId"
+
+                            )
+
+                        )
+
+                        if device.get(
+
+                            "schoolId"
+
+                        )
+
+                        else None
+
+                    ),
+
+                    "branchId": (
+
+                        str(
+
+                            device.get(
+
+                                "branchId"
+
+                            )
+
+                        )
+
+                        if device.get(
+
+                            "branchId"
+
+                        )
+
+                        else None
+
+                    ),
+
+                    "todayDistanceKm": 0,
+
+                    "startOdometerKm": None,
+
+                    "endOdometerKm": None,
+
+                    "firstRecord": None,
+
+                    "lastRecord": None,
+
+                    "message": (
+
+                        "No starting history found."
+
+                    )
+
+                })
+
+
+                continue
 
 
             start_distance = (
-            history[0]
-            .get("attributes",{})
-            .get("totalDistance",0)
+
+                first_today_record[
+
+                    "attributes"
+
+                ][
+
+                    "totalDistance"
+
+                ]
+
+                / 1000
+
+            )
+
+
+            first_record = (
+
+                first_today_record.get(
+
+                    "createdAt"
+
+                )
+
+            )
+
+
+        # =================================
+        # 14. END ODOMETER
+        # =================================
+
+        end_distance = (
+
+            today_last_record[
+
+                "attributes"
+
+            ][
+
+                "totalDistance"
+
+            ]
+
+            / 1000
+
         )
 
 
-            end_distance = (
-            history[-1]
-            .get("attributes",{})
-            .get("totalDistance",0)
-        )
+        # =================================
+        # 15. CALCULATE DISTANCE
+        # =================================
 
+        distance = round(
 
+            end_distance
 
-            distance = round(
-            (
-                end_distance -
-                start_distance
-            ) / 1000,
+            - start_distance,
+
             2
+
         )
 
 
+        if distance < 0:
 
-            output.append({
-
-
-            "vehicleName":
-                device.get("name"),
+            distance = 0
 
 
-            "uniqueId":
-                device.get("uniqueId"),
+        # =================================
+        # 16. ADD VEHICLE
+        # =================================
 
+        output.append({
 
-            "source":
-                (
-                    "school"
-                    if device.get("schoolId")==school_id
-                    else "branch"
-                ),
+            "vehicleName": vehicle_name,
 
+            "uniqueId": device.get(
 
-            "schoolId":
-                str(device.get("schoolId"))
-                if device.get("schoolId")
-                else None,
+                "uniqueId"
 
+            ),
 
-            "branchId":
-                str(device.get("branchId"))
-                if device.get("branchId")
-                else None,
+            "source": "branch",
 
+            "schoolId": (
 
-            "todayDistanceKm":
-                distance
+                str(
+
+                    device.get(
+
+                        "schoolId"
+
+                    )
+
+                )
+
+                if device.get(
+
+                    "schoolId"
+
+                )
+
+                else None
+
+            ),
+
+            "branchId": (
+
+                str(
+
+                    device.get(
+
+                        "branchId"
+
+                    )
+
+                )
+
+                if device.get(
+
+                    "branchId"
+
+                )
+
+                else None
+
+            ),
+
+            "todayDistanceKm": distance,
+
+            "startOdometerKm": round(
+
+                start_distance,
+
+                2
+
+            ),
+
+            "endOdometerKm": round(
+
+                end_distance,
+
+                2
+
+            ),
+
+            "firstRecord": first_record,
+
+            "lastRecord": (
+
+                today_last_record.get(
+
+                    "createdAt"
+
+                )
+
+            )
 
         })
 
 
+    # =====================================
+    # 17. FINAL RESPONSE
+    # =====================================
 
         return {
 
-        "success":True,
+        "success": True,
 
-        "date":
-            now.strftime("%Y-%m-%d"),
+        "date": now.strftime(
 
-        "count":
-            len(output),
+            "%Y-%m-%d"
 
-        "vehicles":
+        ),
+
+        "count": len(
+
             output
+
+        ),
+
+        "vehicles": output
 
     }
     from bson import ObjectId
@@ -6731,6 +7349,10 @@ class BranchGroupEngine:
             "error": str(e)
         }
     
+    
+
+
+
     def get_branchgroup_specific_branch_vehicle_km_report(
     self,
     group_id,
@@ -6743,47 +7365,67 @@ class BranchGroupEngine:
         try:
 
         # =====================================
-        # CLEAN INPUT
+        # 1. CLEAN INPUT
         # =====================================
 
-            branch_name = str(branch_name).strip()
-            vehicle_input = str(vehicle_input).strip()
+            branch_name = str(branch_name or "").strip()
+            vehicle_input = str(vehicle_input or "").strip()
 
+            if not branch_name:
 
-            if not branch_name or not vehicle_input:
                 return {
                 "success": False,
-                "message": "Branch name and vehicle name required."
+                "message": "Branch name is required."
+            }
+
+            if not vehicle_input:
+
+                return {
+                "success": False,
+                "message": "Vehicle name or unique ID is required."
             }
 
 
         # =====================================
-        # GROUP ID
+        # 2. CONVERT GROUP ID
         # =====================================
 
             try:
-                group_id = ObjectId(str(group_id))
-            except:
-                pass
 
+                group_object_id = ObjectId(
+                str(group_id)
+            )
 
-        # =====================================
-        # FIND BRANCH GROUP
-        # =====================================
+            except Exception:
 
-            branch_group = self.db.branchgroups.find_one(
-            {
-                "_id": group_id
+                return {
+                "success": False,
+                "message": "Invalid branch group ID."
             }
-        )
+
+
+        # =====================================
+        # 3. FIND BRANCH GROUP
+        # =====================================
+
+            branch_group = self.db["branchgroups"].find_one({
+
+            "_id": group_object_id
+
+        })
 
 
             if not branch_group:
+
                 return {
                 "success": False,
                 "message": "Branch group not found."
             }
 
+
+        # =====================================
+        # 4. GET ASSIGNED BRANCHES
+        # =====================================
 
             assigned_branches = branch_group.get(
             "AssignedBranch",
@@ -6791,155 +7433,157 @@ class BranchGroupEngine:
         )
 
 
+            if not assigned_branches:
+
+                return {
+                "success": False,
+                "message": "No branches assigned to this branch group."
+            }
+
+
             branch_ids = []
 
 
-            for b in assigned_branches:
+            for branch_id in assigned_branches:
 
                 try:
+
                     branch_ids.append(
-                    ObjectId(str(b))
+                    ObjectId(str(branch_id))
                 )
-                except:
+
+                except Exception:
+
                     pass
 
 
+            if not branch_ids:
 
-        # =====================================
-        # FIND BRANCH
-        # =====================================
-
-            branch = self.db.branches.find_one(
-
-            {
-
-                "_id": {
-                    "$in": branch_ids
-                },
-
-
-                "$or":[
-
-                    {
-                        "branchName":{
-                            "$regex":branch_name,
-                            "$options":"i"
-                        }
-                    },
-
-                    {
-                        "name":{
-                            "$regex":branch_name,
-                            "$options":"i"
-                        }
-                    },
-
-                    {
-                        "username":{
-                            "$regex":branch_name,
-                            "$options":"i"
-                        }
-                    }
-
-                ]
-
+                return {
+                "success": False,
+                "message": "No valid branch IDs found in this group."
             }
 
+
+        # =====================================
+        # 5. FIND BRANCH INSIDE GROUP
+        # =====================================
+
+            branch_regex = re.compile(
+            re.escape(branch_name),
+            re.IGNORECASE
         )
+
+
+            branch = self.db["branches"].find_one({
+
+            "_id": {
+                "$in": branch_ids
+            },
+
+            "$or": [
+
+                {
+                    "branchName": branch_regex
+                },
+
+                {
+                    "name": branch_regex
+                },
+
+                {
+                    "username": branch_regex
+                }
+
+            ]
+
+        })
 
 
             if not branch:
+
                 return {
-                "success":False,
-                "message":"Branch not found in this branch group."
+                "success": False,
+                "message": (
+                    "Branch not found in this branch group."
+                )
             }
 
 
+            branch_id = branch["_id"]
+
 
         # =====================================
-        # DEVICE RBAC
+        # 6. VEHICLE SEARCH
         # =====================================
 
-            device_filter = get_rbac_filter(
-            role,
-            user,
-            "devices",
-            self.db
+            vehicle_regex = re.compile(
+            re.escape(vehicle_input),
+            re.IGNORECASE
         )
 
 
-        # remove invalid RBAC
+            device_rbac_filter = get_rbac_filter(
 
-            if (
-            not device_filter
-            or (
-                "_id" in device_filter
-                and device_filter["_id"] is None
-            )
-        ):
+            role,
 
-                device_filter = {}
+            user,
 
+            "devices",
 
+            self.db
 
-        # =====================================
-        # FIND VEHICLE
-        # =====================================
+        )
+
 
             device_query = {
 
-            "$and":[
+            "$and": [
 
+                device_rbac_filter,
 
                 {
-                    "$or":[
+
+                    "$or": [
 
                         {
-                            "branchId":branch["_id"]
+                            "branchId": branch_id
                         },
 
                         {
-                            "branchId":str(branch["_id"])
+                            "branchId": str(branch_id)
                         }
 
                     ]
-                },
 
+                },
 
                 {
 
-                    "$or":[
-
+                    "$or": [
 
                         {
-                            "name":{
-                                "$regex":vehicle_input,
-                                "$options":"i"
-                            }
+                            "name": vehicle_regex
                         },
 
-
                         {
-                            "vehicleNumber":{
-                                "$regex":vehicle_input,
-                                "$options":"i"
-                            }
+                            "vehicleName": vehicle_regex
                         },
 
-
                         {
-                            "deviceId":{
-                                "$regex":vehicle_input,
-                                "$options":"i"
-                            }
+                            "vehicleNumber": vehicle_regex
                         },
 
+                        {
+                            "vehicle_name": vehicle_regex
+                        },
 
                         {
-                            "uniqueId":{
-                                "$regex":vehicle_input,
-                                "$options":"i"
-                            }
+                            "deviceId": vehicle_regex
+                        },
+
+                        {
+                            "uniqueId": vehicle_regex
                         }
 
                     ]
@@ -6951,21 +7595,13 @@ class BranchGroupEngine:
         }
 
 
-
-            if device_filter:
-
-                device_query["$and"].append(
-                device_filter
-            )
-
-
             print(
-            "FINAL DEVICE QUERY =",
+            "BRANCH GROUP VEHICLE QUERY =",
             device_query
         )
 
 
-            device = self.db.devices.find_one(
+            device = self.db["devices"].find_one(
             device_query
         )
 
@@ -6974,127 +7610,251 @@ class BranchGroupEngine:
 
                 return {
 
-                "success":False,
-                "message":"Vehicle not found in this branch."
+                "success": False,
+
+                "message": (
+                    "Vehicle not found in this branch."
+                )
 
             }
 
 
+        # =====================================
+        # 7. NORMALIZE UNIQUE ID
+        # =====================================
 
-        # =====================================
-        # UNIQUE ID
-        # =====================================
+            unique_id = device.get(
+            "uniqueId"
+        )
+
 
             unique_ids = self.normalize_unique_id(
-            device.get("uniqueId")
+            unique_id
         )
 
 
-
-        # =====================================
-        # GET REPORT DISTANCES
-        # =====================================
-
-
-            report_distances = list(
-
-            self.db["report_distances"].find(
-
-                {
-
-                    "$and":[
-
-
-                        get_rbac_filter(
-                            role,
-                            user,
-                            "report_distances",
-                            self.db
-                        ),
-
-
-                        {
-                            "uniqueId":{
-                                "$in":unique_ids
-                            }
-                        }
-
-                    ]
-
-                }
-
-            )
-
-            .sort(
-                "createdAt",
-                -1
-            )
-
-        )
-
-
-
-            if not report_distances:
+            if not unique_ids:
 
                 return {
 
-                "success":False,
-                "message":"No distance reports found for vehicle."
+                "success": False,
+
+                "message": (
+                    "Vehicle unique ID not found."
+                )
 
             }
 
 
+        # =====================================
+        # 8. GET DISTANCE REPORTS
+        # =====================================
+
+            report_rbac_filter = get_rbac_filter(
+
+            role,
+
+            user,
+
+            "report_distances",
+
+            self.db
+
+        )
+
+
+            report_query = {
+
+            "$and": [
+
+                report_rbac_filter,
+
+                {
+
+                    "uniqueId": {
+
+                        "$in": unique_ids
+
+                    }
+
+                },
+
+                {
+
+                    "createdAt": {
+
+                        "$ne": None
+
+                    }
+
+                }
+
+            ]
+
+        }
+
+
+            reports = list(
+
+            self.db["report_distances"]
+
+            .find(report_query)
+
+            .sort(
+
+                "createdAt",
+
+                -1
+
+            )
+
+        )
+
+
+            if not reports:
+
+                return {
+
+                "success": False,
+
+                "message": (
+                    "No distance reports found for vehicle."
+                )
+
+            }
 
 
         # =====================================
-        # BUILD DATE MAP
+        # 9. IST TIMEZONE
         # =====================================
 
+            IST = timezone(
+            timedelta(
+                hours=5,
+                minutes=30
+            )
+        )
+
+
+            now = datetime.now(IST)
+
+
+            today = now.date()
+
+
+        # =====================================
+        # 10. BUILD DAILY DISTANCE MAP
+        # =====================================
 
             report_map = {}
 
 
-            for r in report_distances:
+            for report in reports:
 
-                date = r["createdAt"].date()
+                created_at = report.get(
+                "createdAt"
+            )
 
-                report_map[date] = (
 
-                    report_map.get(date,0)
+                if not created_at:
+
+                    continue
+
+
+            # ---------------------------------
+            # Convert createdAt to IST
+            # ---------------------------------
+
+                if isinstance(
+                created_at,
+                datetime
+            ):
+
+                    if created_at.tzinfo is None:
+
+                    # MongoDB normally stores UTC datetime
+                        created_at = created_at.replace(
+                        tzinfo=timezone.utc
+                    )
+
+                    created_at_ist = created_at.astimezone(
+                    IST
+                )
+
+                    report_date = created_at_ist.date()
+
+
+                else:
+
+                    continue
+
+
+            # ---------------------------------
+            # Distance value
+            # ---------------------------------
+
+                distance_value = report.get(
+                "distance",
+                0
+            )
+
+
+                try:
+
+                    distance_value = float(
+                    distance_value or 0
+                )
+
+                except Exception:
+
+                    distance_value = 0
+
+
+                report_map[report_date] = (
+
+                    report_map.get(
+                    report_date,
+                    0
+                )
 
                 +
 
-                float(
-                    r.get(
-                        "distance",
-                        0
-                    )
-                )
+                distance_value
 
             )
 
 
+            if not report_map:
 
-            today = datetime.utcnow().date()
+                return {
+
+                "success": False,
+
+                "message": (
+                    "No valid distance data found."
+                )
+
+            }
 
 
+        # =====================================
+        # 11. FIND ANALYSIS DATE
+        # =====================================
 
             available_dates = sorted(
             report_map.keys()
         )
 
 
-
-        # =====================================
-        # ACTIVE STATUS
-        # =====================================
-
-
             if today in report_map:
 
                 analysis_date = today
+
                 status = "active"
-                message = "Vehicle is active today."
+
+                message = (
+                "Vehicle is active today."
+            )
 
 
             else:
@@ -7104,42 +7864,52 @@ class BranchGroupEngine:
                 status = "inactive"
 
                 message = (
-                f"Vehicle not active today. "
-                f"Last active {analysis_date}"
+
+                "Vehicle was not active today. "
+
+                f"Last active date was "
+                f"{analysis_date.strftime('%Y-%m-%d')}."
+
             )
 
 
+        # =====================================
+        # 12. CURRENT / LAST ACTIVE DISTANCE
+        # =====================================
 
             current_km = round(
+
             report_map.get(
                 analysis_date,
                 0
             ),
+
             2
+
         )
 
 
-
         # =====================================
-        # PREVIOUS DAY
+        # 13. PREVIOUS AVAILABLE DAY
         # =====================================
-
 
             previous_date = None
 
 
-            for d in reversed(available_dates):
+            for report_date in reversed(
+            available_dates
+        ):
 
-                if d < analysis_date:
+                if report_date < analysis_date:
 
-                    previous_date = d
+                    previous_date = report_date
+
                     break
-
 
 
             yesterday_km = round(
 
-            report_map.get(
+                report_map.get(
                 previous_date,
                 0
             ),
@@ -7149,30 +7919,41 @@ class BranchGroupEngine:
         )
 
 
-
         # =====================================
-        # WEEK
+        # 14. CURRENT WEEK
         # =====================================
-
 
             week_start = (
+
             analysis_date
+
             -
+
             timedelta(
+
                 days=analysis_date.weekday()
+
             )
+
         )
 
 
             week_total = 0
 
 
-            for d,v in report_map.items():
+            for report_date, km in report_map.items():
 
-                if week_start <= d <= analysis_date:
+                if (
 
-                    week_total += v
+                week_start
 
+                <= report_date
+
+                <= analysis_date
+
+            ):
+
+                    week_total += km
 
 
             week_total = round(
@@ -7181,16 +7962,16 @@ class BranchGroupEngine:
         )
 
 
-
         # =====================================
-        # MONTH 30 DAYS
+        # 15. ROLLING 30 DAYS
         # =====================================
-
 
             month_start = (
 
             analysis_date
+
             -
+
             timedelta(
                 days=29
             )
@@ -7201,12 +7982,19 @@ class BranchGroupEngine:
             month_total = 0
 
 
-            for d,v in report_map.items():
+            for report_date, km in report_map.items():
 
-                if month_start <= d <= analysis_date:
+                if (
 
-                    month_total += v
+                month_start
 
+                <= report_date
+
+                <= analysis_date
+
+            ):
+
+                    month_total += km
 
 
             month_total = round(
@@ -7215,115 +8003,159 @@ class BranchGroupEngine:
         )
 
 
-
         # =====================================
-        # RESPONSE
+        # 16. FINAL RESPONSE
         # =====================================
-
 
             return {
 
+            "success": True,
 
-            "success":True,
+            "status": status,
 
+            "message": message,
 
-            "status":status,
+            "branch": {
 
+                "branchId": str(
+                    branch["_id"]
+                ),
 
-            "message":message,
+                "branchName": (
 
+                    branch.get(
+                        "branchName"
+                    )
 
-            "branch":{
+                    or branch.get(
+                        "name"
+                    )
 
-                "branchId":str(branch["_id"]),
+                    or branch.get(
+                        "username"
+                    )
 
-                "branchName":
-                    branch.get("branchName")
+                )
 
             },
 
+            "vehicle": {
 
-            "vehicle":{
+                "deviceId": str(
+                    device["_id"]
+                ),
 
-                "deviceId":
-                    str(device["_id"]),
+                "vehicleName": (
 
-                "vehicleName":
-                    (
-                        device.get("vehicleNumber")
-                        or device.get("name")
+                    device.get(
+                        "vehicleNumber"
+                    )
+
+                    or device.get(
+                        "vehicleName"
+                    )
+
+                    or device.get(
+                        "vehicle_name"
+                    )
+
+                    or device.get(
+                        "name"
+                    )
+
+                    or "N/A"
+
+                ),
+
+                "uniqueId": device.get(
+                    "uniqueId"
+                ),
+
+                "status": device.get(
+                    "status"
+                ),
+
+                "category": device.get(
+                    "category"
+                ),
+
+                "model": device.get(
+                    "model"
+                )
+
+            },
+
+            "distanceReport": {
+
+                "current": {
+
+                    "label": (
+
+                        "Today"
+
+                        if status == "active"
+
+                        else "Last Active"
+
                     ),
 
-                "uniqueId":
-                    device.get("uniqueId"),
+                    "date": (
 
-                "status":
-                    device.get("status"),
+                        analysis_date.strftime(
+                            "%Y-%m-%d"
+                        )
 
-                "model":
-                    device.get("model")
+                    ),
 
-            },
-
-
-            "distanceReport":{
-
-
-                "current":{
-
-                    "label":
-                        "Today"
-                        if status=="active"
-                        else "Last Active",
-
-                    "km":
-                        current_km
+                    "km": current_km
 
                 },
 
+                "previousDay": {
 
-                "yesterday":{
+                    "date": (
 
-                    "date":
-                        (
-                            previous_date.strftime("%Y-%m-%d")
-                            if previous_date
-                            else None
-                        ),
+                        previous_date.strftime(
+                            "%Y-%m-%d"
+                        )
 
-                    "km":
-                        yesterday_km
+                        if previous_date
 
-                },
+                        else None
 
+                    ),
 
-                "week":{
-
-                    "from":
-                        week_start.strftime("%Y-%m-%d"),
-
-                    "to":
-                        analysis_date.strftime("%Y-%m-%d"),
-
-                    "totalKm":
-                        week_total
+                    "km": yesterday_km
 
                 },
 
+                "week": {
 
-                "month":{
+                    "from": week_start.strftime(
+                        "%Y-%m-%d"
+                    ),
 
-                    "type":
-                        "rolling_30_days",
+                    "to": analysis_date.strftime(
+                        "%Y-%m-%d"
+                    ),
 
-                    "from":
-                        month_start.strftime("%Y-%m-%d"),
+                    "totalKm": week_total
 
-                    "to":
-                        analysis_date.strftime("%Y-%m-%d"),
+                },
 
-                    "totalKm":
-                        month_total
+                "month": {
+
+                    "type": "rolling_30_days",
+
+                    "from": month_start.strftime(
+                        "%Y-%m-%d"
+                    ),
+
+                    "to": analysis_date.strftime(
+                        "%Y-%m-%d"
+                    ),
+
+                    "totalKm": month_total
 
                 }
 
@@ -7332,22 +8164,25 @@ class BranchGroupEngine:
         }
 
 
-
         except Exception as e:
 
-
             print(
-            "ERROR =",
-            e
+            "ERROR IN "
+            "get_branchgroup_specific_branch_vehicle_km_report:",
+            str(e)
         )
-
 
             return {
 
-            "success":False,
-            "error":str(e)
+            "success": False,
 
-            }
+            "message": (
+                "Failed to generate vehicle distance report."
+            ),
+
+            "error": str(e)
+
+        }
     def get_branchgroup_vehicle_km_report(
     self,
     group_id,
@@ -9003,80 +9838,209 @@ class BranchGroupEngine:
         try:
 
         # =====================================
-        # FIND SCHOOL VEHICLE UNDER BRANCH GROUP
+        # 1. CLEAN VEHICLE INPUT
+        # =====================================
+
+            if isinstance(vehicle_input, dict):
+
+                vehicle_input = (
+                vehicle_input.get("vehicle_input")
+                or vehicle_input.get("vehicle")
+                or vehicle_input.get("vehicleName")
+            )
+
+
+            vehicle_input = str(
+            vehicle_input or ""
+        ).strip()
+
+
+            if not vehicle_input:
+
+                return {
+
+                "success": False,
+
+                "message": (
+                    "Vehicle name or unique ID is required."
+                )
+
+            }
+
+
+        # =====================================
+        # 2. FIND VEHICLE IN BRANCH GROUP
         # =====================================
 
             result = self.get_branchgroup_specific_vehicle(
+
             group_id,
+
             vehicle_input
+
         )
 
-            if not result["success"]:
+
+            if not result.get("success"):
+
                 return result
 
-            vehicle = result["vehicle"]
+
+            vehicle = result.get(
+            "vehicle"
+        )
+
+
+            if not vehicle:
+
+                return {
+
+                "success": False,
+
+                "message": "Vehicle not found."
+
+            }
+
+
+        # =====================================
+        # 3. GET UNIQUE ID
+        # =====================================
+
+            unique_id = (
+
+            vehicle.get(
+                "uniqueId"
+            )
+
+            or vehicle.get(
+                "unique_id"
+            )
+
+        )
+
 
             unique_ids = self.normalize_unique_id(
-            vehicle["uniqueId"]
+            unique_id
         )
 
+
+            if not unique_ids:
+
+                return {
+
+                "success": False,
+
+                "message": (
+                    "Vehicle unique ID not found."
+                )
+
+            }
+
+
         # =====================================
-        # TODAY (IST)
+        # 4. IST TODAY RANGE
         # =====================================
 
-            IST = timezone(timedelta(hours=5, minutes=30))
+            IST = timezone(
+            timedelta(
+                hours=5,
+                minutes=30
+            )
+        )
 
-            now = datetime.now(IST)
+
+            now = datetime.now(
+            IST
+        )
+
 
             today_start = now.replace(
+
             hour=0,
+
             minute=0,
+
             second=0,
+
             microsecond=0
+
         )
+
 
             today_end = now.replace(
+
             hour=23,
+
             minute=59,
+
             second=59,
+
             microsecond=999999
+
         )
 
+
         # =====================================
-        # HISTORY PIPELINE
+        # 5. HISTORY RBAC FILTER
+        # =====================================
+
+            history_filter = get_rbac_filter(
+
+            role,
+
+            user,
+
+            "histories",
+
+            self.db
+
+        )
+
+
+        # =====================================
+        # 6. GET FIRST AND LAST ODOMETER TODAY
         # =====================================
 
             pipeline = [
 
             {
+
                 "$match": {
 
                     "$and": [
 
-                        get_rbac_filter(
-                            role,
-                            user,
-                            "histories",
-                            self.db
-                        ),
+                        history_filter,
 
                         {
+
                             "uniqueId": {
+
                                 "$in": unique_ids
+
                             }
+
                         },
 
                         {
+
                             "attributes.totalDistance": {
+
                                 "$ne": None
+
                             }
+
                         },
 
                         {
+
                             "createdAt": {
+
                                 "$gte": today_start,
+
                                 "$lte": today_end
+
                             }
+
                         }
 
                     ]
@@ -9085,94 +10049,121 @@ class BranchGroupEngine:
 
             },
 
-            {
-                "$sort": {
-                    "createdAt": 1
-                }
-            },
 
             {
+
+                "$sort": {
+
+                    "createdAt": 1
+
+                }
+
+            },
+
+
+            {
+
+                "$group": {
+
+                    "_id": None,
+
+
+                    "firstRecord": {
+
+                        "$first": "$createdAt"
+
+                    },
+
+
+                    "lastRecord": {
+
+                        "$last": "$createdAt"
+
+                    },
+
+
+                    "startOdometer": {
+
+                        "$first": (
+
+                            "$attributes.totalDistance"
+
+                        )
+
+                    },
+
+
+                    "endOdometer": {
+
+                        "$last": (
+
+                            "$attributes.totalDistance"
+
+                        )
+
+                    }
+
+                }
+
+            },
+
+
+            {
+
                 "$project": {
 
                     "_id": 0,
 
-                    "vehicleName": "$name",
 
-                    "createdAt": 1,
+                    "firstRecord": 1,
 
-                    "totalDistanceKm": {
+
+                    "lastRecord": 1,
+
+
+                    "startOdometerKm": {
 
                         "$divide": [
 
-                            "$attributes.totalDistance",
+                            "$startOdometer",
 
                             1000
 
                         ]
 
-                    }
-
-                }
-
-            },
-
-            {
-                "$group": {
-
-                    "_id": None,
-
-                    "vehicleName": {
-                        "$first": "$vehicleName"
                     },
 
-                    "startDistance": {
-                        "$first": "$totalDistanceKm"
+
+                    "endOdometerKm": {
+
+                        "$divide": [
+
+                            "$endOdometer",
+
+                            1000
+
+                        ]
+
                     },
 
-                    "endDistance": {
-                        "$last": "$totalDistanceKm"
-                    },
 
-                    "firstRecord": {
-                        "$first": "$createdAt"
-                    },
+                    "todayDistanceKm": {
 
-                    "lastRecord": {
-                        "$last": "$createdAt"
-                    }
-
-                }
-
-            },
-
-            {
-                "$project": {
-
-                    "_id": 0,
-
-                    "vehicleName": 1,
-
-                    "firstRecord": 1,
-
-                    "lastRecord": 1,
-
-                    "todayDistance": {
-
-                        "$round": [
+                        "$divide": [
 
                             {
 
                                 "$subtract": [
 
-                                    "$endDistance",
+                                    "$endOdometer",
 
-                                    "$startDistance"
+                                    "$startOdometer"
 
                                 ]
 
                             },
 
-                            2
+                            1000
 
                         ]
 
@@ -9184,9 +10175,17 @@ class BranchGroupEngine:
 
         ]
 
+
             report = list(
-            self.db.histories.aggregate(pipeline)
+
+            self.db["histories"].aggregate(
+
+                pipeline
+
+            )
+
         )
+
 
             if not report:
 
@@ -9194,51 +10193,222 @@ class BranchGroupEngine:
 
                 "success": False,
 
-                "message": "No history found for today."
+                "message": (
+
+                    "No history found for this vehicle today."
+
+                )
 
             }
 
+
             report = report[0]
 
+
         # =====================================
-        # RESPONSE
+        # 7. PREVENT NEGATIVE DISTANCE
+        # =====================================
+
+            distance_km = round(
+
+            float(
+
+                report.get(
+
+                    "todayDistanceKm",
+
+                    0
+
+                )
+
+            ),
+
+            2
+
+        )
+
+
+            if distance_km < 0:
+
+                distance_km = 0
+
+
+        # =====================================
+        # 8. VEHICLE NAME
+        # =====================================
+
+            vehicle_name = (
+
+            vehicle.get(
+                "vehicleName"
+            )
+
+            or vehicle.get(
+                "vehicleNumber"
+            )
+
+            or vehicle.get(
+                "vehicle_name"
+            )
+
+            or vehicle.get(
+                "name"
+            )
+
+            or "N/A"
+
+        )
+
+
+        # =====================================
+        # 9. FINAL RESPONSE
         # =====================================
 
             return {
 
             "success": True,
 
+
             "vehicle": {
 
-                "deviceId": vehicle.get("deviceId"),
+                "deviceId": (
 
-                "vehicleName": vehicle.get("vehicleName"),
+                    str(
 
-                "uniqueId": vehicle.get("uniqueId")
+                        vehicle.get(
+                            "deviceId"
+                        )
+
+                        or vehicle.get(
+                            "_id"
+                        )
+
+                    )
+
+                    if (
+
+                        vehicle.get(
+                            "deviceId"
+                        )
+
+                        or vehicle.get(
+                            "_id"
+                        )
+
+                    )
+
+                    else None
+
+                ),
+
+
+                "vehicleName": vehicle_name,
+
+
+                "uniqueId": unique_id,
+
+
+                "status": vehicle.get(
+                    "status"
+                ),
+
+
+                "category": vehicle.get(
+                    "category"
+                ),
+
+
+                "model": vehicle.get(
+                    "model"
+                )
 
             },
 
-            "todayDistance": {
 
-                "date": now.strftime("%Y-%m-%d"),
+            "todayAccurateDistance": {
 
-                "distanceKm": report["todayDistance"],
+                "date": now.strftime(
+                    "%Y-%m-%d"
+                ),
 
-                "firstRecord": report["firstRecord"],
 
-                "lastRecord": report["lastRecord"]
+                "distanceKm": distance_km,
+
+
+                "firstRecord": report.get(
+                    "firstRecord"
+                ),
+
+
+                "lastRecord": report.get(
+                    "lastRecord"
+                ),
+
+
+                "startOdometerKm": round(
+
+                    float(
+
+                        report.get(
+
+                            "startOdometerKm",
+
+                            0
+
+                        )
+
+                    ),
+
+                    2
+
+                ),
+
+
+                "endOdometerKm": round(
+
+                    float(
+
+                        report.get(
+
+                            "endOdometerKm",
+
+                            0
+
+                        )
+
+                    ),
+
+                    2
+
+                )
 
             }
 
         }
 
+
         except Exception as e:
 
-            print(e)
+            print(
+
+            "ERROR IN "
+
+            "get_branchgroup_school_vehicle_today_distance:",
+
+            str(e)
+
+        )
+
 
             return {
 
             "success": False,
+
+            "message": (
+
+                "Failed to calculate today's vehicle distance."
+
+            ),
 
             "error": str(e)
 

@@ -197,74 +197,668 @@ class ReportDistanceEngine:
     self,
     school_id,
     role,
-    user,
-    limit=100
+    user
 ):
+
+    # =====================================
+    # 1. GET SCHOOL DEVICES
+    # =====================================
 
         devices = self.get_allowed_devices(
 
         role,
+
         user,
 
         self.id_filter(
+
             "schoolId",
+
             school_id
+
         )
 
     )
 
-        unique_ids = []
 
-        for d in devices:
+        if not devices:
 
-            uid = d.get("uniqueId")
-
-            if uid:
-
-                unique_ids.extend(
-                self.normalize_unique_id(uid)
-            )
-
-        if not unique_ids:
             return []
 
-        report_filter = get_rbac_filter(
-        role,
-        user,
-        "report_distances",
-        self.db
+
+    # =====================================
+    # 2. IST TODAY RANGE
+    # =====================================
+
+        IST = timezone(
+
+        timedelta(
+
+            hours=5,
+
+            minutes=30
+
+        )
+
     )
 
-        reports = list(
 
-            self.db["report_distances"].find({
+        now = datetime.now(IST)
 
-            "$and": [
 
-                report_filter,
+        today_start = now.replace(
+
+        hour=0,
+
+        minute=0,
+
+        second=0,
+
+        microsecond=0
+
+    )
+
+
+        today_end = now.replace(
+
+        hour=23,
+
+        minute=59,
+
+        second=59,
+
+        microsecond=999999
+
+    )
+
+
+    # =====================================
+    # 3. HISTORY RBAC FILTER
+    # =====================================
+
+        history_rbac_filter = get_rbac_filter(
+
+        role,
+
+        user,
+
+        "histories",
+
+        self.db
+
+    )
+
+
+        result = []
+
+
+    # =====================================
+    # 4. LOOP THROUGH ALL SCHOOL VEHICLES
+    # =====================================
+
+        for device in devices:
+
+
+            unique_id = device.get(
+
+            "uniqueId"
+
+        )
+
+
+            if not unique_id:
+
+                continue
+
+
+            unique_ids = self.normalize_unique_id(
+
+            unique_id
+
+        )
+
+
+            if not unique_ids:
+
+                continue
+
+
+        # =================================
+        # 5. LAST ODOMETER BEFORE TODAY
+        # =================================
+
+            previous_record = (
+
+            self.db["histories"].find_one(
 
                 {
-                    "uniqueId": {
-                        "$in": unique_ids
-                    }
-                }
+
+                    "$and": [
+
+                        history_rbac_filter,
+
+                        {
+
+                            "uniqueId": {
+
+                                "$in": unique_ids
+
+                            }
+
+                        },
+
+                        {
+
+                            "attributes.totalDistance": {
+
+                                "$ne": None
+
+                            }
+
+                        },
+
+                        {
+
+                            "createdAt": {
+
+                                "$lt": today_start
+
+                            }
+
+                        }
+
+                    ]
+
+                },
+
+                sort=[
+
+                    (
+
+                        "createdAt",
+
+                        -1
+
+                    )
+
+                ]
+
+            )
+
+        )
+
+
+        # =================================
+        # 6. LATEST ODOMETER TODAY
+        # =================================
+
+            today_last_record = (
+
+            self.db["histories"].find_one(
+
+                {
+
+                    "$and": [
+
+                        history_rbac_filter,
+
+                        {
+
+                            "uniqueId": {
+
+                                "$in": unique_ids
+
+                            }
+
+                        },
+
+                        {
+
+                            "attributes.totalDistance": {
+
+                                "$ne": None
+
+                            }
+
+                        },
+
+                        {
+
+                            "createdAt": {
+
+                                "$gte": today_start,
+
+                                "$lte": today_end
+
+                            }
+
+                        }
+
+                    ]
+
+                },
+
+                sort=[
+
+                    (
+
+                        "createdAt",
+
+                        -1
+
+                    )
+
+                ]
+
+            )
+
+        )
+
+
+        # =================================
+        # 7. VEHICLE NAME
+        # =================================
+
+            vehicle_name = (
+
+            device.get("name")
+
+            or device.get("vehicleName")
+
+            or device.get("vehicleNumber")
+
+            or device.get("vehicle_name")
+
+            or "N/A"
+
+        )
+
+
+        # =================================
+        # 8. NO HISTORY TODAY
+        # =================================
+
+            if not today_last_record:
+
+                result.append({
+
+                "vehicleName": vehicle_name,
+
+                "deviceId": str(
+
+                    device.get("_id")
+
+                ),
+
+                "uniqueId": device.get(
+
+                    "uniqueId"
+
+                ),
+
+                "status": device.get(
+
+                    "status"
+
+                ),
+
+                "category": device.get(
+
+                    "category"
+
+                ),
+
+                "model": device.get(
+
+                    "model"
+
+                ),
+
+                "todayAccurateDistance": {
+
+                    "date": now.strftime(
+
+                        "%Y-%m-%d"
+
+                    ),
+
+                    "distanceKm": 0,
+
+                    "firstRecord": None,
+
+                    "lastRecord": None,
+
+                    "startOdometerKm": None,
+
+                    "endOdometerKm": None
+
+                },
+
+                "message": (
+
+                    "No history found for today."
+
+                )
+
+            })
+
+
+                continue
+
+
+        # =================================
+        # 9. START ODOMETER
+        # =================================
+
+            if previous_record:
+
+                start_distance = (
+
+                previous_record[
+
+                    "attributes"
+
+                ][
+
+                    "totalDistance"
+
+                ]
+
+                / 1000
+
+            )
+
+
+                first_record = (
+
+                previous_record.get(
+
+                    "createdAt"
+
+                )
+
+            )
+
+
+            else:
+
+
+            # =============================
+            # FIRST RECORD OF TODAY
+            # =============================
+
+                first_today_record = (
+
+                self.db["histories"].find_one(
+
+                    {
+
+                        "$and": [
+
+                            history_rbac_filter,
+
+                            {
+
+                                "uniqueId": {
+
+                                    "$in": unique_ids
+
+                                }
+
+                            },
+
+                            {
+
+                                "attributes.totalDistance": {
+
+                                    "$ne": None
+
+                                }
+
+                            },
+
+                            {
+
+                                "createdAt": {
+
+                                    "$gte": today_start,
+
+                                    "$lte": today_end
+
+                                }
+
+                            }
+
+                        ]
+
+                    },
+
+                    sort=[
+
+                        (
+
+                            "createdAt",
+
+                            1
+
+                        )
+
+                    ]
+
+                )
+
+            )
+
+
+                if not first_today_record:
+
+                    result.append({
+
+                    "vehicleName": vehicle_name,
+
+                    "deviceId": str(
+
+                        device.get("_id")
+
+                    ),
+
+                    "uniqueId": device.get(
+
+                        "uniqueId"
+
+                    ),
+
+                    "todayAccurateDistance": {
+
+                        "date": now.strftime(
+
+                            "%Y-%m-%d"
+
+                        ),
+
+                        "distanceKm": 0,
+
+                        "firstRecord": None,
+
+                        "lastRecord": None,
+
+                        "startOdometerKm": None,
+
+                        "endOdometerKm": None
+
+                    },
+
+                    "message": (
+
+                        "No starting history found."
+
+                    )
+
+                })
+
+
+                    continue
+
+
+                start_distance = (
+
+                first_today_record[
+
+                    "attributes"
+
+                ][
+
+                    "totalDistance"
+
+                ]
+
+                / 1000
+
+            )
+
+
+                first_record = (
+
+                first_today_record.get(
+
+                    "createdAt"
+
+                )
+
+            )
+
+
+        # =================================
+        # 10. END ODOMETER
+        # =================================
+
+            end_distance = (
+
+            today_last_record[
+
+                "attributes"
+
+            ][
+
+                "totalDistance"
 
             ]
 
+            / 1000
+
+        )
+
+
+        # =================================
+        # 11. TODAY DISTANCE
+        # =================================
+
+            distance = round(
+
+            end_distance
+
+            - start_distance,
+
+            2
+
+        )
+
+
+        # =================================
+        # 12. PREVENT NEGATIVE DISTANCE
+        # =================================
+
+            if distance < 0:
+
+                distance = 0
+
+
+        # =================================
+        # 13. ADD VEHICLE REPORT
+        # =================================
+
+            result.append({
+
+            "vehicleName": vehicle_name,
+
+            "deviceId": str(
+
+                device.get("_id")
+
+            ),
+
+            "uniqueId": device.get(
+
+                "uniqueId"
+
+            ),
+
+            "status": device.get(
+
+                "status"
+
+            ),
+
+            "category": device.get(
+
+                "category"
+
+            ),
+
+            "model": device.get(
+
+                "model"
+
+            ),
+
+            "todayAccurateDistance": {
+
+                "date": now.strftime(
+
+                    "%Y-%m-%d"
+
+                ),
+
+                "distanceKm": distance,
+
+                "firstRecord": first_record,
+
+                "lastRecord": (
+
+                    today_last_record.get(
+
+                        "createdAt"
+
+                    )
+
+                ),
+
+                "startOdometerKm": round(
+
+                    start_distance,
+
+                    2
+
+                ),
+
+                "endOdometerKm": round(
+
+                    end_distance,
+
+                    2
+
+                )
+
+            }
+
         })
-        .sort("createdAt", -1)
-        .limit(limit)
 
-    )
 
-        return [
+    # =====================================
+    # 14. RETURN ALL SCHOOL VEHICLES
+    # =====================================
 
-        self.clean(r)
-
-        for r in reports
-
-    ]
-
+        return result
     # =====================================
     # BRANCH DISTANCE REPORT
     # =====================================
