@@ -443,7 +443,7 @@ class GeofenceReportEngine:
 
         user,
 
-        "geofencereports",
+        "geofences",
 
         self.db
 
@@ -451,7 +451,7 @@ class GeofenceReportEngine:
 
         reports = list(
 
-        self.db["geofencereports"]
+        self.db["geofences"]
 
         .find(report_filter)
 

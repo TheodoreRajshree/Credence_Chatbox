@@ -657,59 +657,46 @@ class BranchEngine:
     # GEOFENCES
     # ====================================
 
+    
     def get_branch_geofences(
-        self,
-        branch_id,
-        role,
-        user
-    ):
+    self,
+    branch_id,
+    role,
+    user
+):
 
+    # 1. Get RBAC filter exactly like reports
         rbac_filter = get_rbac_filter(
-            role,
-            user,
-            "geofences",
-            self.db
-        )
+        role,
+        user,
+        "geofences",
+        self.db
+    )
 
+    # 2. Convert branch ID
+        converted_branch_id = self._convert_branch_id(branch_id)
 
-        geofences=list(
+    # 3. Add branch filter to RBAC filter
+        geofence_filter = {
+        **rbac_filter,
+        "branchId": converted_branch_id
+    }
 
-            self.db["geofences"].find({
+    # 4. Fetch geofences
+        geofences = list(
+        self.db["geofences"]
+        .find(geofence_filter)
+    )
 
-                "$and":[
-
-                    rbac_filter,
-
-                    {
-
-                        "branchId":
-                        self._convert_branch_id(branch_id)
-
-                    }
-
-                ]
-
-            })
-
-        )
-
-
+    # 5. Return required fields
         return [
-
-            {
-
-                "name":
-                g.get("geofenceName"),
-
-                "address":
-                g.get("address")
-
-            }
-
-            for g in geofences
-
-        ]
-
+        {
+            "name": g.get("geofenceName"),
+            "address": g.get("address")
+        }
+        for g in geofences
+    ]
+    
 
 
     # ====================================

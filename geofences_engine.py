@@ -243,6 +243,8 @@ class GeofencesEngine:
 
         ]
     
+    
+    
     def get_specific_vehicle_branch_geofences(
     self,
     branch_id,
@@ -251,9 +253,17 @@ class GeofencesEngine:
     user
 ):
 
-    # ===============================
-    # Device RBAC Filter
-    # ===============================
+        print("========================================")
+        print("GET SPECIFIC VEHICLE GEOFENCE")
+        print("ROLE:", role)
+        print("BRANCH ID:", branch_id)
+        print("VEHICLE INPUT:", vehicle_input)
+        print("========================================")
+
+
+    # =====================================================
+    # 1. GET DEVICE RBAC FILTER
+    # =====================================================
 
         device_filter = get_rbac_filter(
         role,
@@ -262,78 +272,148 @@ class GeofencesEngine:
         self.db
     )
 
+        print("DEVICE RBAC FILTER:")
+        print(device_filter)
 
-    # ===============================
-    # Find Vehicle In Branch
-    # ===============================
 
-        device = self.db["devices"].find_one({
+    # =====================================================
+    # 2. VEHICLE SEARCH FILTER
+    # =====================================================
 
-        "$and": [
+        vehicle_match_filter = {
 
-            device_filter,
+        "$or": [
 
             {
-                "$or": [
-                    {
-                        "branchId": self.convert_id(branch_id)
-                    },
-                    {
-                        "branchId": str(branch_id)
-                    }
-                ]
+                "vehicleNumber": {
+                    "$regex": vehicle_input,
+                    "$options": "i"
+                }
             },
 
             {
-                "$or": [
+                "vehicle_name": {
+                    "$regex": vehicle_input,
+                    "$options": "i"
+                }
+            },
 
-                    {
-                        "vehicleNumber": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    },
+            {
+                "name": {
+                    "$regex": vehicle_input,
+                    "$options": "i"
+                }
+            },
 
-                    {
-                        "vehicle_name": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "name": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "uniqueId": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    }
-
-                ]
+            {
+                "uniqueId": {
+                    "$regex": vehicle_input,
+                    "$options": "i"
+                }
             }
 
         ]
 
-    })
+    }
 
 
-        if not device:
+    # =====================================================
+    # 3. FIND VEHICLE WITHOUT RBAC
+    # =====================================================
+
+        test_device = self.db["devices"].find_one(
+        vehicle_match_filter
+    )
+
+
+        print("DEVICE WITHOUT RBAC:")
+        print(test_device)
+
+
+        if not test_device:
+
             return {
+
             "success": False,
-            "message": "Vehicle not found in branch."
+
+            "message": "Vehicle not found."
+
         }
 
 
+    # =====================================================
+    # 4. CHECK VEHICLE BRANCH
+    # =====================================================
 
-    # ===============================
-    # Find Vehicle Route
-    # ===============================
+        device_branch_id = test_device.get(
+        "branchId"
+    )
+
+
+        print("DEVICE BRANCH ID:")
+        print(device_branch_id)
+
+        print("DEVICE BRANCH TYPE:")
+        print(type(device_branch_id))
+
+        print("REQUESTED BRANCH ID:")
+        print(branch_id)
+
+        print("REQUESTED BRANCH TYPE:")
+        print(type(branch_id))
+
+
+        if str(device_branch_id) != str(branch_id):
+
+            return {
+
+            "success": False,
+
+            "message": "Vehicle does not belong to this branch."
+
+        }
+
+
+    # =====================================================
+    # 5. CHECK RBAC PERMISSION
+    # =====================================================
+
+        rbac_query = {
+
+        "_id": test_device["_id"],
+
+        **device_filter
+
+    }
+
+
+        print("FINAL RBAC QUERY:")
+        print(rbac_query)
+
+
+        device = self.db["devices"].find_one(
+        rbac_query
+    )
+
+
+        print("DEVICE AFTER RBAC:")
+        print(device)
+
+
+        if not device:
+
+            return {
+
+            "success": False,
+
+            "message": "You do not have permission to access this vehicle."
+
+        }
+
+
+    # =====================================================
+    # 6. FIND ROUTE
+    # =====================================================
 
         route = self.db["routes"].find_one({
 
@@ -353,16 +433,19 @@ class GeofencesEngine:
 
 
         if not route:
+
             return {
+
             "success": False,
+
             "message": "Route not assigned to vehicle."
+
         }
 
 
-
-    # ===============================
-    # Find Vehicle Geofence
-    # ===============================
+    # =====================================================
+    # 7. FIND GEOFENCE
+    # =====================================================
 
         geofence = self.db["geofences"].find_one({
 
@@ -382,16 +465,19 @@ class GeofencesEngine:
 
 
         if not geofence:
+
             return {
+
             "success": False,
+
             "message": "Vehicle geofence not found."
+
         }
 
 
-
-    # ===============================
-    # Final Response
-    # ===============================
+    # =====================================================
+    # 8. FINAL RESPONSE
+    # =====================================================
 
         return {
 
@@ -399,26 +485,39 @@ class GeofencesEngine:
 
         "vehicle": {
 
-            "deviceId": str(device["_id"]),
+            "deviceId": str(
+                device["_id"]
+            ),
 
             "deviceName": (
+
                 device.get("vehicleNumber")
+
                 or device.get("vehicle_name")
+
                 or device.get("name")
+
                 or "N/A"
+
             )
 
         },
 
         "route": {
 
-            "routeId": str(route["_id"]),
+            "routeId": str(
+                route["_id"]
+            ),
 
-            "routeNumber": route.get("routeNumber")
+            "routeNumber": route.get(
+                "routeNumber"
+            )
 
         },
 
-        "geofence": self.clean(geofence)
+        "geofence": self.clean(
+            geofence
+        )
 
     }
     # =====================================

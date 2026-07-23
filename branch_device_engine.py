@@ -2610,6 +2610,7 @@ class BranchDeviceEngine:
         }
     } 
   
+   
     def get_branch_today_accurate_distance(
     self,
     branch_name,
@@ -2619,219 +2620,670 @@ class BranchDeviceEngine:
 ):
 
     # =====================================
-    # 1. Find Vehicle using RBAC
+    # 1. VEHICLE INPUT
     # =====================================
 
-        result = self.get_branch_single_vehicle(
-        branch_name,
-        vehicle_input,
+        if isinstance(vehicle_input, dict):
+
+            vehicle_input = vehicle_input.get(
+            "vehicle_input"
+        )
+
+
+        vehicle_input = str(
+        vehicle_input or ""
+    ).strip()
+
+
+        if not vehicle_input:
+
+            return {
+
+            "success": False,
+
+            "message": (
+                "Please enter vehicle name "
+                "or unique ID."
+            )
+
+        }
+
+
+    # =====================================
+    # 2. FIND VEHICLE USING RBAC
+    # =====================================
+
+        device_rbac_filter = get_rbac_filter(
+
         role,
-        user
+
+        user,
+
+        "devices",
+
+        self.db
+
     )
 
-        if not result["success"]:
-            return result
 
-        vehicle = result["vehicle"]
+        regex = re.compile(
 
-        unique_ids = self.normalize_unique_id(
-        vehicle["uniqueId"]
+        f"^{re.escape(vehicle_input)}$",
+
+        re.IGNORECASE
+
     )
 
-    # =====================================
-    # 2. Today's IST Time
-    # =====================================
 
-        IST = timezone(timedelta(hours=5, minutes=30))
+        device = self.db["devices"].find_one({
 
-        now = datetime.now(IST)
+        "$and": [
 
-        today_start = now.replace(
-        hour=0,
-        minute=0,
-        second=0,
-        microsecond=0
-    )
+            device_rbac_filter,
 
-        today_end = now.replace(
-        hour=23,
-        minute=59,
-        second=59,
-        microsecond=999999
-    )
+            {
 
-    # =====================================
-    # 3. Aggregate History (RBAC Applied)
-    # =====================================
+                "$or": [
 
-        pipeline = [
+                    {
+                        "name": regex
+                    },
 
-        {
-            "$match": {
+                    {
+                        "vehicleName": regex
+                    },
 
-                "$and": [
+                    {
+                        "vehicleNumber": regex
+                    },
 
-                    get_rbac_filter(
-                        role,
-                        user,
-                        "histories",
-                        self.db
-                    ),
+                    {
+                        "vehicle_name": regex
+                    },
+
+                    {
+                        "uniqueId": vehicle_input
+                    },
 
                     {
                         "uniqueId": {
-                            "$in": unique_ids
-                        }
-                    },
 
-                    {
-                        "attributes.totalDistance": {
-                            "$ne": None
-                        }
-                    },
+                            "$in": (
 
-                    {
-                        "createdAt": {
-                            "$gte": today_start,
-                            "$lte": today_end
+                                self.normalize_unique_id(
+
+                                    vehicle_input
+
+                                )
+
+                            )
+
                         }
+
                     }
 
                 ]
 
             }
-        },
 
-        {
-            "$sort": {
-                "createdAt": 1
-            }
-        },
+        ]
 
-        {
-            "$project": {
+    })
 
-                "_id": 0,
 
-                "name": 1,
-
-                "createdAt": 1,
-
-                "totalDistanceKm": {
-                    "$divide": [
-                        "$attributes.totalDistance",
-                        1000
-                    ]
-                }
-
-            }
-        },
-
-        {
-            "$group": {
-
-                "_id": None,
-
-                "vehicleName": {
-                    "$first": "$name"
-                },
-
-                "startDistance": {
-                    "$first": "$totalDistanceKm"
-                },
-
-                "endDistance": {
-                    "$last": "$totalDistanceKm"
-                },
-
-                "firstRecord": {
-                    "$first": "$createdAt"
-                },
-
-                "lastRecord": {
-                    "$last": "$createdAt"
-                }
-
-            }
-        },
-
-        {
-            "$project": {
-
-                "_id": 0,
-
-                "vehicleName": 1,
-
-                "firstRecord": 1,
-
-                "lastRecord": 1,
-
-                "todayDistance": {
-
-                    "$round": [
-
-                        {
-                            "$subtract": [
-                                "$endDistance",
-                                "$startDistance"
-                            ]
-                        },
-
-                        2
-
-                    ]
-
-                }
-
-            }
-        }
-
-    ]
-
-        report = list(
-        self.db["histories"].aggregate(pipeline)
-    )
-
-        if not report:
+        if not device:
 
             return {
+
             "success": False,
-            "message": "No history found for today."
+
+            "message": "Vehicle not found."
+
         }
 
-        report = report[0]
+
+    # =====================================
+    # 3. NORMALIZE UNIQUE ID
+    # =====================================
+
+        unique_ids = self.normalize_unique_id(
+
+        device.get(
+
+            "uniqueId"
+
+        )
+
+    )
+
+
+        if not unique_ids:
+
+            return {
+
+            "success": False,
+
+            "message": (
+
+                "Vehicle unique ID not found."
+
+            )
+
+        }
+
+
+    # =====================================
+    # 4. IST TODAY RANGE
+    # =====================================
+
+        IST = timezone(
+
+        timedelta(
+
+            hours=5,
+
+            minutes=30
+
+        )
+
+    )
+
+
+        now = datetime.now(IST)
+
+
+        today_start = now.replace(
+
+        hour=0,
+
+        minute=0,
+
+        second=0,
+
+        microsecond=0
+
+    )
+
+
+        today_end = now.replace(
+
+        hour=23,
+
+        minute=59,
+
+        second=59,
+
+        microsecond=999999
+
+    )
+
+
+    # =====================================
+    # 5. HISTORY RBAC FILTER
+    # =====================================
+
+        history_rbac_filter = get_rbac_filter(
+
+        role,
+
+        user,
+
+        "histories",
+
+        self.db
+
+    )
+
+
+    # =====================================
+    # 6. LAST ODOMETER BEFORE TODAY
+    # =====================================
+
+        previous_record = (
+
+        self.db["histories"].find_one(
+
+            {
+
+                "$and": [
+
+                    history_rbac_filter,
+
+                    {
+
+                        "uniqueId": {
+
+                            "$in": unique_ids
+
+                        }
+
+                    },
+
+                    {
+
+                        "attributes.totalDistance": {
+
+                            "$ne": None
+
+                        }
+
+                    },
+
+                    {
+
+                        "createdAt": {
+
+                            "$lt": today_start
+
+                        }
+
+                    }
+
+                ]
+
+            },
+
+            sort=[
+
+                (
+
+                    "createdAt",
+
+                    -1
+
+                )
+
+            ]
+
+        )
+
+    )
+
+
+    # =====================================
+    # 7. TODAY'S LATEST ODOMETER
+    # =====================================
+
+        today_last_record = (
+
+        self.db["histories"].find_one(
+
+            {
+
+                "$and": [
+
+                    history_rbac_filter,
+
+                    {
+
+                        "uniqueId": {
+
+                            "$in": unique_ids
+
+                        }
+
+                    },
+
+                    {
+
+                        "attributes.totalDistance": {
+
+                            "$ne": None
+
+                        }
+
+                    },
+
+                    {
+
+                        "createdAt": {
+
+                            "$gte": today_start,
+
+                            "$lte": today_end
+
+                        }
+
+                    }
+
+                ]
+
+            },
+
+            sort=[
+
+                (
+
+                    "createdAt",
+
+                    -1
+
+                )
+
+            ]
+
+        )
+
+    )
+
+
+        if not today_last_record:
+
+            return {
+
+            "success": False,
+
+            "message": (
+
+                "No history found for today."
+
+            )
+
+        }
+
+
+    # =====================================
+    # 8. DETERMINE START ODOMETER
+    # =====================================
+
+        if previous_record:
+
+            start_distance = (
+
+            previous_record[
+
+                "attributes"
+
+            ][
+
+                "totalDistance"
+
+            ]
+
+            / 1000
+
+        )
+
+
+            first_record = previous_record[
+
+            "createdAt"
+
+        ]
+
+
+        else:
+
+        # =================================
+        # NO PREVIOUS RECORD
+        # USE FIRST RECORD OF TODAY
+        # =================================
+
+            first_today_record = (
+
+            self.db["histories"].find_one(
+
+                {
+
+                    "$and": [
+
+                        history_rbac_filter,
+
+                        {
+
+                            "uniqueId": {
+
+                                "$in": unique_ids
+
+                            }
+
+                        },
+
+                        {
+
+                            "attributes.totalDistance": {
+
+                                "$ne": None
+
+                            }
+
+                        },
+
+                        {
+
+                            "createdAt": {
+
+                                "$gte": today_start,
+
+                                "$lte": today_end
+
+                            }
+
+                        }
+
+                    ]
+
+                },
+
+                sort=[
+
+                    (
+
+                        "createdAt",
+
+                        1
+
+                    )
+
+                ]
+
+            )
+
+        )
+
+
+            if not first_today_record:
+
+                return {
+
+                "success": False,
+
+                "message": (
+
+                    "No starting history found."
+
+                )
+
+            }
+
+
+            start_distance = (
+
+            first_today_record[
+
+                "attributes"
+
+            ][
+
+                "totalDistance"
+
+            ]
+
+            / 1000
+
+        )
+
+
+        first_record = first_today_record[
+
+            "createdAt"
+
+        ]
+
+
+    # =====================================
+    # 9. END ODOMETER
+    # =====================================
+
+        end_distance = (
+
+        today_last_record[
+
+            "attributes"
+
+        ][
+
+            "totalDistance"
+
+        ]
+
+        / 1000
+
+    )
+
+
+    # =====================================
+    # 10. ACCURATE DISTANCE
+    # =====================================
+
+        distance = round(
+
+        end_distance
+
+        - start_distance,
+
+        2
+
+    )
+
+
+    # Prevent negative distance caused
+    # by odometer reset or bad GPS data
+
+        if distance < 0:
+
+            distance = 0
+
+
+    # =====================================
+    # 11. BRANCH NAME
+    # =====================================
+
+        branch_response = branch_name
+
+
+    # =====================================
+    # 12. FINAL RESPONSE
+    # =====================================
 
         return {
 
         "success": True,
 
-        "branch": result["branch"],
+
+        "branch": branch_response,
+
 
         "vehicle": {
 
-            "vehicleName": vehicle.get("vehicleName"),
-            "deviceId": vehicle.get("deviceId"),
-            "uniqueId": vehicle.get("uniqueId"),
-            "status": vehicle.get("status"),
-            "category": vehicle.get("category"),
-            "model": vehicle.get("model")
+            "vehicleName": (
+
+                device.get("name")
+
+                or device.get("vehicleName")
+
+                or device.get("vehicleNumber")
+
+                or device.get("vehicle_name")
+
+                or "N/A"
+
+            ),
+
+
+            "deviceId": str(
+
+                device.get("_id")
+
+            ),
+
+
+            "uniqueId": device.get(
+
+                "uniqueId"
+
+            ),
+
+
+            "status": device.get(
+
+                "status"
+
+            ),
+
+
+            "category": device.get(
+
+                "category"
+
+            ),
+
+
+            "model": device.get(
+
+                "model"
+
+            )
 
         },
 
+
         "todayAccurateDistance": {
 
-            "date": now.strftime("%Y-%m-%d"),
+            "date": now.strftime(
 
-            "distanceKm": report["todayDistance"],
+                "%Y-%m-%d"
 
-            "firstRecord": report["firstRecord"],
+            ),
 
-            "lastRecord": report["lastRecord"]
+
+            "distanceKm": distance,
+
+
+            "firstRecord": first_record,
+
+
+            "lastRecord": (
+
+                today_last_record.get(
+
+                    "createdAt"
+
+                )
+
+            ),
+
+
+            "startOdometerKm": round(
+
+                start_distance,
+
+                2
+
+            ),
+
+
+            "endOdometerKm": round(
+
+                end_distance,
+
+                2
+
+            )
 
         }
 
     }
-    
     def get_superadmin_single_vehicle_km_report(
     self,
     vehicle_input

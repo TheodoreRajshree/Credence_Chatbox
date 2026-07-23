@@ -417,96 +417,259 @@ def predefined_chat(
 
     try:
 
-        if not authorization.startswith("Bearer "):
+        # ==================================
+        # CHECK AUTHORIZATION HEADER
+        # ==================================
+
+        if not authorization.startswith(
+            "Bearer "
+        ):
+
             raise HTTPException(
                 status_code=401,
                 detail="Invalid Authorization header"
             )
 
-        token = authorization.replace("Bearer ", "")
+
+        # ==================================
+        # EXTRACT JWT TOKEN
+        # ==================================
+
+        token = authorization.replace(
+            "Bearer ",
+            ""
+        ).strip()
+
+
+        # ==================================
+        # VERIFY JWT TOKEN
+        # ==================================
 
         user = verify_token(token)
-        print("TOKEN USER =================")
-        print(user)
-        print(user)
-        print("ID =", user.get("_id"))
-        print("GROUP ID =", user.get("groupId"))
-        print("ROLE =", user.get("role"))
-        user["groupId"] = (
-    user.get("groupId")
-    or user.get("branchGroupId")
-    or user.get("_id")
-)
-        # role = user.get("role", "").lower()
-        role = (user.get("role") or "").strip().lower()
 
-        print("ROLE:", role)
-        print("QUESTION ID:", req.question_id)
+
+        print(
+            "TOKEN USER ================="
+        )
+
+        print(user)
+
+
+        # ==================================
+        # GET ROLE
+        # ==================================
+
+        role = (
+            user.get("role") or ""
+        ).strip().lower()
+
+
+        # ==================================
+        # BRANCH USER FIX
+        # ==================================
+
+        # Branch JWT has:
+        #
+        # "_id": branch ID
+        #
+        # but does NOT have:
+        #
+        # "branchId"
+        #
+        # Therefore recreate branchId
+        # internally for existing code.
+
+        if role == "branch":
+
+            user["branchId"] = user.get(
+                "_id"
+            )
+
+
+        # ==================================
+        # SET GROUP ID
+        # ==================================
+
+        user["groupId"] = (
+
+            user.get("groupId")
+
+            or user.get("branchGroupId")
+
+            or user.get("_id")
+
+        )
+
+
+        # ==================================
+        # DEBUG
+        # ==================================
+
+        print(
+            "ID =",
+            user.get("_id")
+        )
+
+        print(
+            "BRANCH ID =",
+            user.get("branchId")
+        )
+
+        print(
+            "GROUP ID =",
+            user.get("groupId")
+        )
+
+        print(
+            "ROLE =",
+            user.get("role")
+        )
+
+
+        print(
+            "ROLE:",
+            role
+        )
+
+        print(
+            "QUESTION ID:",
+            req.question_id
+        )
+
+
+        # ==================================
+        # INPUT VALUES
+        # ==================================
 
         input_value = {
 
-    "branch_name": req.branch_name,
+            "branch_name":
+                req.branch_name,
 
-    "school_name": req.school_name,
+            "school_name":
+                req.school_name,
 
-    "school_id": req.school_id,
+            "school_id":
+                req.school_id,
 
-    "vehicle_input": req.vehicle_input,
+            "vehicle_input":
+                req.vehicle_input,
 
-    "branchgroup_input": req.branchgroup_input,
+            "branchgroup_input":
+                req.branchgroup_input,
 
-    "report_date": req.report_date,
-    "from_date": req.from_date,     # ADD
+            "report_date":
+                req.report_date,
 
-    "to_date": req.to_date  
+            "from_date":
+                req.from_date,
 
-}
-        print(req.model_dump())
+            "to_date":
+                req.to_date
+
+        }
+
+
+        print(
+            req.model_dump()
+        )
+
+
+        # ==================================
+        # EXECUTE QUESTION
+        # ==================================
+
         response = execute_predefined_question(
-    role,
-    user,
-    req.question_id,
-    input_value
-)
 
-        print("RESPONSE =", response)
+            role,
 
-# If engine returned failure, return failure directly
-        if isinstance(response, dict) and response.get("success") is False:
+            user,
+
+            req.question_id,
+
+            input_value
+
+        )
+
+
+        print(
+            "RESPONSE =",
+            response
+        )
+
+
+        # ==================================
+        # HANDLE NO DATA
+        # ==================================
+
+        if (
+
+            isinstance(
+                response,
+                dict
+            )
+
+            and response.get(
+                "success"
+            ) is False
+
+        ):
 
             raise HTTPException(
-        status_code=404,
-        detail=response.get(
-            "message",
-            "Data not found"
-        )
-    )
 
-# Success 
+                status_code=404,
+
+                detail=response.get(
+
+                    "message",
+
+                    "Data not found"
+
+                )
+
+            )
+
+
+        # ==================================
+        # SUCCESS RESPONSE
+        # ==================================
+
         return {
-    "success": True,
-    "ui_type": "auto",
-    "data": response
-}
+
+            "success": True,
+
+            "ui_type": "auto",
+
+            "data": response
+
+        }
+
 
     except HTTPException:
+
         raise
 
 
     except ValueError as e:
 
         raise HTTPException(
-        status_code=404,
-        detail=str(e)
-    )
+
+            status_code=404,
+
+            detail=str(e)
+
+        )
 
 
     except Exception as e:
 
         raise HTTPException(
-        status_code=500,
-        detail=str(e)
-    )
+
+            status_code=500,
+
+            detail=str(e)
+
+        )
 # ==========================
 # START SERVER
 # ==========================
