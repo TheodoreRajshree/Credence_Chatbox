@@ -250,7 +250,7 @@ def validate_user(req: LoginRequest):
 
         token_payload = {
 
-            "_id": str(
+            "id": str(
                 user["_id"]
             ),
 
@@ -482,8 +482,11 @@ def predefined_chat(
         if role == "branch":
 
             user["branchId"] = user.get(
-                "_id"
+                "id"
             )
+            user["_id"] = user.get(
+        "id"
+    )
 
 
         # ==================================
