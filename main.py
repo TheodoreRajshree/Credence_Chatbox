@@ -331,6 +331,10 @@ def validate_user(req: LoginRequest):
 # CREATE TOKEN
 # ==========================
 
+     # ==========================
+# CREATE TOKEN
+# ==========================
+
     if found_collection == "branches":
 
     # ==========================
@@ -359,25 +363,30 @@ def validate_user(req: LoginRequest):
 
     elif found_collection == "branchgroups":
 
-    # ==================================
+    # ==========================
     # BRANCHGROUP TOKEN
-    # ==================================
+    # ==========================
 
         assigned_branches = (
+
         user.get(
             "AssignedBranch",
             []
         )
+
         or []
+
     )
 
 
-    # Convert ObjectId values to strings
-
         assigned_branches = (
+
         convert_objectids_to_strings(
+
             assigned_branches
+
         )
+
     )
 
 
@@ -402,12 +411,138 @@ def validate_user(req: LoginRequest):
 
     }
 
+    elif found_collection == "schools":
+
+    # ==========================================
+    # SCHOOL TOKEN
+    # ==========================================
+
+       # ==========================================
+# SCHOOL ID
+# ==========================================
+
+        school_object_id = user["_id"]
+
+        school_id = str(
+    school_object_id
+)
+
+
+# ==========================================
+# FIND ALL BRANCHES OF THIS SCHOOL
+# ==========================================
+
+        school_branches = list(
+
+    db["branches"].find(
+
+        {
+            "$or": [
+
+                # If branches.schoolId is ObjectId
+                {
+                    "schoolId": school_object_id
+                },
+
+                # If branches.schoolId is string
+                {
+                    "schoolId": school_id
+                }
+
+            ]
+        },
+
+        {
+            "_id": 1
+        }
+
+    )
+
+)
+
+
+# ==========================================
+# CONVERT BRANCH IDS TO STRINGS
+# ==========================================
+
+        assigned_branches = [
+
+    str(branch["_id"])
+
+    for branch in school_branches
+
+]
+
+
+        print(
+    "SCHOOL ID:",
+    school_id
+)
+
+        print(
+    "FOUND SCHOOL BRANCHES:",
+    assigned_branches
+)
+
+
+    # ==========================================
+    # CONVERT BRANCH IDS TO STRINGS
+    # ==========================================
+
+        assigned_branches = [
+
+        str(
+            branch["_id"]
+        )
+
+        for branch in school_branches
+
+    ]
+
+
+        token_payload = {
+
+        "id": school_id,
+
+        "username": user.get(
+
+            "username",
+
+            ""
+
+        ),
+
+        "role": (
+
+            user.get(
+
+                "role"
+
+            )
+
+            or "school"
+
+        ).strip().lower(),
+
+        "AssignedBranch": assigned_branches,
+
+        "loginAccess": user.get(
+
+            "loginAccess",
+
+            True
+
+        )
+
+    }
+    
+
 
     else:
 
     # ==========================
     # OTHER USERS
-    # KEEP OLD TOKEN
+    # OLD TOKEN STRUCTURE
     # ==========================
 
         token_payload = {
@@ -430,9 +565,13 @@ def validate_user(req: LoginRequest):
         "branchId": branch_id,
 
         "groupId": (
+
             str(group_id)
+
             if group_id
+
             else None
+
         )
 
     }
@@ -554,13 +693,11 @@ def predefined_chat(
 
     try:
 
-        # ==================================
-        # CHECK AUTHORIZATION HEADER
-        # ==================================
+        # ==========================================
+        # 1. CHECK AUTHORIZATION HEADER
+        # ==========================================
 
-        if not authorization.startswith(
-            "Bearer "
-        ):
+        if not authorization.startswith("Bearer "):
 
             raise HTTPException(
                 status_code=401,
@@ -568,21 +705,38 @@ def predefined_chat(
             )
 
 
-        # ==================================
-        # EXTRACT JWT TOKEN
-        # ==================================
+        # ==========================================
+        # 2. EXTRACT TOKEN
+        # ==========================================
 
         token = authorization.replace(
             "Bearer ",
-            ""
+            "",
+            1
         ).strip()
 
 
-        # ==================================
-        # VERIFY JWT TOKEN
-        # ==================================
+        if not token:
+
+            raise HTTPException(
+                status_code=401,
+                detail="Token is missing"
+            )
+
+
+        # ==========================================
+        # 3. VERIFY JWT TOKEN
+        # ==========================================
 
         user = verify_token(token)
+
+
+        if not user:
+
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid or expired token"
+            )
 
 
         print(
@@ -592,117 +746,175 @@ def predefined_chat(
         print(user)
 
 
-        # ==================================
-        # GET ROLE
-        # ==================================
+        # ==========================================
+        # 4. GET ROLE
+        # ==========================================
 
         role = (
-            user.get("role") or ""
+
+            user.get("role")
+
+            or ""
+
         ).strip().lower()
 
 
-        # ==================================
-        # BRANCH USER FIX
-        # ==================================
+        if not role:
 
-        # Branch JWT has:
-        #
-        # "_id": branch ID
-        #
-        # but does NOT have:
-        #
-        # "branchId"
-        #
-        # Therefore recreate branchId
-        # internally for existing code.
-
-    #     if role == "branch":
-
-    #         user["branchId"] = user.get(
-    #             "id"
-    #         )
-    #         user["_id"] = user.get(
-    #     "id"
-    # )
+            raise HTTPException(
+                status_code=401,
+                detail="Role missing in token"
+            )
 
 
-    #     # ==================================
-    #     # SET GROUP ID
-    #     # ==================================
-
-    #     user["groupId"] = (
-
-    #         user.get("groupId")
-
-    #         or user.get("branchGroupId")
-
-    #         or user.get("_id")
-
-    #     )
-          # ==================================
-# USER ID NORMALIZATION
-# ==================================
+        # ==========================================
+        # 5. NORMALIZE USER ID
+        # ==========================================
 
         if role == "branch":
 
-    # JWT "id" = branch ID
+            # Branch token:
+            #
+            # {
+            #     "id": "BRANCH_ID",
+            #     "role": "branch"
+            # }
+            #
+            # Existing backend expects:
+            #
+            # user["branchId"]
+            # user["_id"]
 
-            user["branchId"] = user.get(
-        "id"
-    )
+            branch_id = user.get("id")
 
-    # For old backend code
 
-            user["_id"] = user.get(
-        "id"
-    )
+            if not branch_id:
+
+                raise HTTPException(
+                    status_code=401,
+                    detail="Branch ID missing in token"
+                )
+
+
+            user["branchId"] = branch_id
+
+            user["_id"] = branch_id
 
 
         elif role == "branchgroup":
 
-    # JWT "id" = branchgroup ID
+            # BranchGroup token:
+            #
+            # {
+            #     "id": "GROUP_ID",
+            #     "role": "branchgroup",
+            #     "AssignedBranch": [...]
+            # }
 
-            user["groupId"] = user.get(
-        "id"
-    )
-
-    # For old backend code
-
-            user["_id"] = user.get(
-        "id"
-    )
+            group_id = user.get("id")
 
 
-# ==================================
-# GROUP ID
-# ==================================
+            if not group_id:
 
-        if role == "branchgroup":
+                raise HTTPException(
+                    status_code=401,
+                    detail="BranchGroup ID missing in token"
+                )
 
-            user["groupId"] = user.get(
-        "id"
-    )
+
+            user["groupId"] = group_id
+
+            user["_id"] = group_id
+
+
+        elif role == "school":
+
+            # School token:
+            #
+            # {
+            #     "id": "SCHOOL_ID",
+            #     "username": "gpswale",
+            #     "role": "school",
+            #     "AssignedBranch": [],
+            #     "loginAccess": true
+            # }
+
+            school_id = user.get("id")
+
+
+            if not school_id:
+
+                raise HTTPException(
+                    status_code=401,
+                    detail="School ID missing in token"
+                )
+
+
+            # Existing school code can use _id
+
+            user["_id"] = school_id
+
+
+            # Also provide schoolId
+            # for compatibility with old functions
+
+            user["schoolId"] = school_id
+
 
         else:
 
+            # ==========================================
+            # OLD USERS
+            # ==========================================
+
+            user["_id"] = (
+
+                user.get("_id")
+
+                or user.get("id")
+
+            )
+
+
+            user["schoolId"] = (
+
+                user.get("schoolId")
+
+            )
+
+
+            user["branchId"] = (
+
+                user.get("branchId")
+
+            )
+
+
             user["groupId"] = (
 
-        user.get("groupId")
+                user.get("groupId")
 
-        or user.get("branchGroupId")
+                or user.get("branchGroupId")
 
-        or user.get("_id")
-
-    )
+            )
 
 
-        # ==================================
-        # DEBUG
-        # ==================================
+        # ==========================================
+        # 6. DEBUG
+        # ==========================================
+
+        print(
+            "================ NORMALIZED USER ================"
+        )
 
         print(
             "ID =",
             user.get("_id")
+        )
+
+        print(
+            "SCHOOL ID =",
+            user.get("schoolId")
         )
 
         print(
@@ -717,24 +929,18 @@ def predefined_chat(
 
         print(
             "ROLE =",
-            user.get("role")
-        )
-
-
-        print(
-            "ROLE:",
             role
         )
 
         print(
-            "QUESTION ID:",
+            "QUESTION ID =",
             req.question_id
         )
 
 
-        # ==================================
-        # INPUT VALUES
-        # ==================================
+        # ==========================================
+        # 7. REQUEST INPUT VALUES
+        # ==========================================
 
         input_value = {
 
@@ -744,8 +950,10 @@ def predefined_chat(
             "school_name":
                 req.school_name,
 
-            "school_id":
-                req.school_id,
+            "school_id": (
+        req.school_id
+        or req.school_name
+    ),
 
             "vehicle_input":
                 req.vehicle_input,
@@ -766,13 +974,17 @@ def predefined_chat(
 
 
         print(
+            "REQUEST DATA ================="
+        )
+
+        print(
             req.model_dump()
         )
 
 
-        # ==================================
-        # EXECUTE QUESTION
-        # ==================================
+        # ==========================================
+        # 8. EXECUTE QUESTION
+        # ==========================================
 
         response = execute_predefined_question(
 
@@ -788,14 +1000,15 @@ def predefined_chat(
 
 
         print(
-            "RESPONSE =",
-            response
+            "RESPONSE ================="
         )
 
+        print(response)
 
-        # ==================================
-        # HANDLE NO DATA
-        # ==================================
+
+        # ==========================================
+        # 9. HANDLE NO DATA
+        # ==========================================
 
         if (
 
@@ -825,9 +1038,9 @@ def predefined_chat(
             )
 
 
-        # ==================================
-        # SUCCESS RESPONSE
-        # ==================================
+        # ==========================================
+        # 10. SUCCESS RESPONSE
+        # ==========================================
 
         return {
 
@@ -857,6 +1070,13 @@ def predefined_chat(
 
 
     except Exception as e:
+
+        print(
+            "PREDEFINED CHAT ERROR ================="
+        )
+
+        print(e)
+
 
         raise HTTPException(
 

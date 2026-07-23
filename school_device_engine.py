@@ -711,162 +711,221 @@ class SchoolDeviceEngine:
      
 
 
+    
+   
+ 
+    
+    
     def get_school_single_branch(
     self,
-    school_name,
     branch_name,
     role,
     user
 ):
 
-    # =====================================
-    # RBAC Filter
-    # =====================================
-        school_filter = get_rbac_filter(
-        role,
-        user,
-        "schools",
-        self.db
-    ) 
-        print("school_name =", school_name)
-        print("branch_name =", branch_name)
+        try:
 
-    # =====================================
-    # Find School
-    # =====================================
-        school = self.db["schools"].find_one({
+        # =====================================
+        # VALIDATE BRANCH NAME
+        # =====================================
 
-        "$and": [
+            if branch_name is None:
 
-            school_filter,
-
-            {
-                "$or": [
-
-                    {
-                        "schoolName": {
-                            "$regex": f"^{re.escape(str(school_name))}$",
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "username": {
-                            "$regex": f"^{re.escape(str(school_name))}$",
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "_id": ObjectId(str(school_name))
-                    } if ObjectId.is_valid(str(school_name)) else {
-                        "schoolName": "__NO_MATCH__"
-                    }
-
-                ]
+                return {
+                "success": False,
+                "message": "Branch name is required."
             }
 
-        ]
+            branch_name = str(branch_name).strip()
 
-    })
+            if not branch_name:
 
-        if not school:
-            return {
-            "success": False,
-            "message": f"School '{school_name}' not found."
-        }
+                return {
+                "success": False,
+                "message": "Branch name is required."
+            }
 
-        school_id = school["_id"]
+            print("BRANCH NAME =", branch_name)
 
-    # =====================================
-    # RBAC Branch Filter
-    # =====================================
-        branch_filter = get_rbac_filter(
-        role,
-        user,
-        "branches",
-        self.db
-    )
+        # =====================================
+        # GET SCHOOL ID FROM NORMALIZED JWT
+        # =====================================
 
-    # =====================================
-    # Find Branch
-    # =====================================
-        branch = self.db["branches"].find_one({
+            school_id = (
+            user.get("schoolId")
+            or user.get("id")
+            or user.get("_id")
+        )
 
-        "$and": [
+            if not school_id:
 
-            branch_filter,
+                return {
+                "success": False,
+                "message": "School ID not found in user."
+            }
 
-            {
-                "$or": [
-                    {"schoolId": school_id},
-                    {"schoolId": str(school_id)}
-                ]
+            print("SCHOOL ID =", school_id)
+
+        # =====================================
+        # NORMALIZE SCHOOL ID
+        # =====================================
+
+            school_ids = []
+
+            try:
+
+                school_object_id = ObjectId(
+                str(school_id)
+            )
+
+                school_ids.append(
+                school_object_id
+            )
+
+            except Exception:
+
+                pass
+
+            school_ids.append(
+            str(school_id)
+        )
+
+        # =====================================
+        # BRANCH SEARCH QUERY
+        # =====================================
+
+            branch_query = {
+
+            "schoolId": {
+
+                "$in": school_ids
+
             },
 
-            {
-                "$or": [
+            "$or": [
 
-                    {
-                        "branchName": {
-                            "$regex": f"^{re.escape(str(branch_name))}$",
-                            "$options": "i"
-                        }
-                    },
+                {
+                    "branchName": {
 
-                    {
-                        "username": {
-                            "$regex": f"^{re.escape(str(branch_name))}$",
-                            "$options": "i"
-                        }
-                    },
+                        "$regex": re.escape(
+                            branch_name
+                        ),
 
-                    {
-                        "_id": ObjectId(str(branch_name))
-                    } if ObjectId.is_valid(str(branch_name)) else {
-                        "branchName": "__NO_MATCH__"
+                        "$options": "i"
+
                     }
 
-                ]
+                },
+
+                {
+
+                    "username": {
+
+                        "$regex": re.escape(
+                            branch_name
+                        ),
+
+                        "$options": "i"
+
+                    }
+
+                }
+
+            ]
+
+        }
+
+            print(
+            "BRANCH SEARCH QUERY =",
+            branch_query
+        )
+
+        # =====================================
+        # FIND BRANCH
+        # =====================================
+
+            branch = self.db["branches"].find_one(
+            branch_query
+        )
+
+            if not branch:
+
+                return {
+
+                "success": False,
+
+                "message": (
+                    f"Branch '{branch_name}' "
+                    "not found under this school."
+                )
+
             }
 
-        ]
+        # =====================================
+        # RETURN BRANCH
+        # =====================================
 
-    })
-
-        if not branch:
             return {
+
+            "success": True,
+
+            "branch": {
+
+                "branchId": str(
+                    branch["_id"]
+                ),
+
+                "branchName": branch.get(
+                    "branchName"
+                ),
+
+                "username": branch.get(
+                    "username"
+                ),
+
+                "email": branch.get(
+                    "email"
+                ),
+
+                "mobileNo": branch.get(
+                    "mobileNo"
+                ),
+
+                "schoolId": str(
+                    branch.get(
+                        "schoolId"
+                    )
+                )
+                if branch.get("schoolId")
+                else None,
+
+                "active": branch.get(
+                    "Active"
+                ),
+
+                "createdAt": branch.get(
+                    "createdAt"
+                )
+
+            }
+
+        }
+
+        except Exception as e:
+
+            print(
+            "ERROR get_school_single_branch =",
+            repr(e)
+        )
+
+            return {
+
             "success": False,
-            "message": f"Branch '{branch_name}' not found in school '{school_name}'."
-        }
 
-        return {
-
-        "success": True,
-
-        "school": {
-
-            "schoolId": str(school["_id"]),
-            "schoolName": school.get("schoolName"),
-            "username": school.get("username"),
-            "email": school.get("email"),
-           
-           
-            "createdAt": school.get("createdAt")
-
-        },
-
-        "branch": {
-
-            "branchId": str(branch["_id"]),
-            "branchName": branch.get("branchName"),
-            "username": branch.get("username"),
-            "email": branch.get("email"),
-           
-            "createdAt": branch.get("createdAt")
+            "error": str(e)
 
         }
-    }
+            
     def get_school_all_branches(
     self,
     role,

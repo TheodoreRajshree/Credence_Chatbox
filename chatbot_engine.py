@@ -453,37 +453,19 @@ def execute_predefined_question(
                     "message": "Please enter vehicle name or unique ID"
                 }
                 
+            
             if function_name == "get_school_single_branch":
-
-                print("========== DEBUG ==========")
-                print("input_value =", input_value)
-                print("type =", type(input_value))
-
-                school_name = (
-        input_value.get("school_name")
-        or input_value.get("schoolId")
-        or user.get("schoolName")
-        or user.get("schoolId")
-    )
 
                 branch_name = (
         input_value.get("branch_name")
         or input_value.get("branchId")
-        or user.get("branchName")
-        or user.get("branchId")
     )
 
-                print("school_name =", school_name)
-                print("branch_name =", branch_name)
-                print("===========================")
-
                 result = engine_method(
-        school_name,
         branch_name,
         role,
         user
-
-    ) 
+    )
             elif function_name == "find_specific_branch_superadmin":
                 if isinstance(input_value, dict):
                     branch_input = (
