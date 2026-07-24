@@ -363,7 +363,10 @@ def execute_predefined_question(
         }
 
     function_name = question["function"]
-
+    print("=" * 50)
+    print("FUNCTION NAME =", repr(function_name))
+    print("INPUT VALUE =", input_value)
+    print("=" * 50)
     engine_method = ENGINE_REGISTRY.get(
         function_name
     )
@@ -466,6 +469,20 @@ def execute_predefined_question(
         role,
         user
     )
+
+                result = serialize(result)
+
+                if isinstance(result, dict) and result.get("success") is False:
+                    result["question"] = question["question"]
+                    return result
+
+                return {
+        "success": True,
+        "question": question["question"],
+        "data": result
+    }
+
+                
             elif function_name == "find_specific_branch_superadmin":
                 if isinstance(input_value, dict):
                     branch_input = (
@@ -1486,8 +1503,13 @@ def execute_predefined_question(
 
     )
             # ---------------- SCHOOL ----------------
-            elif function_name.startswith("get_school"):
-
+            # elif function_name.startswith("get_school"):
+            elif (
+    function_name.startswith("get_school")
+    and function_name != "get_school_single_branch"
+):
+                print("######## ENTERED GENERIC SCHOOL BLOCK ########")
+                print("FUNCTION =", function_name)
                 if isinstance(input_value, dict):
 
                     school_name = (
@@ -1604,11 +1626,8 @@ def execute_predefined_question(
             return result
 
 # Otherwise return success.
-        return {
-    "success": True,
-    "question": question["question"],
-    "data": result
-}
+        result["question"] = question["question"]
+        return result
 
     except Exception as e:
 

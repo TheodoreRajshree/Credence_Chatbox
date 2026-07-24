@@ -1010,6 +1010,8 @@ class SchoolEngine:
         "vehicles": vehicles
 
     }
+    import re
+
     def get_school_single_vehicle(
     self,
     school_name,
@@ -1017,7 +1019,10 @@ class SchoolEngine:
     role,
     user
 ):
-    # Find school
+    # =====================================
+    # FIND SCHOOL
+    # =====================================
+
         school = self.find_school(
         school_name,
         role,
@@ -1032,7 +1037,10 @@ class SchoolEngine:
 
         school_id = school["_id"]
 
-    # RBAC filter
+    # =====================================
+    # RBAC FILTER
+    # =====================================
+
         device_filter = get_rbac_filter(
         role,
         user,
@@ -1040,59 +1048,48 @@ class SchoolEngine:
         self.db
     )
 
-    # Search vehicle inside this school
-        device = self.db["devices"].find_one({
+    # =====================================
+    # NORMALIZE INPUT
+    # =====================================
 
+        def normalize(text):
+            return re.sub(r"\s+", "", str(text or "")).lower()
+
+        normalized_input = normalize(vehicle_input)
+
+    # =====================================
+    # GET ALL VEHICLES OF THIS SCHOOL
+    # =====================================
+
+        devices = self.db["devices"].find({
         "$and": [
-
             device_filter,
-
             {
                 "$or": [
                     {"schoolId": school_id},
                     {"schoolId": str(school_id)}
                 ]
-            },
-
-            {
-                "$or": [
-
-                    {
-                        "vehicleNumber": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "vehicle_name": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "name": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "uniqueId": {
-                            "$in": [
-                                vehicle_input,
-                                str(vehicle_input)
-                            ]
-                        }
-                    }
-
-                ]
             }
-
         ]
-
     })
+
+        device = None
+
+        for d in devices:
+
+            vehicle_number = normalize(d.get("vehicleNumber"))
+            vehicle_name = normalize(d.get("vehicle_name"))
+            name = normalize(d.get("name"))
+            unique_id = normalize(d.get("uniqueId"))
+
+            if (
+                normalized_input == vehicle_number or
+                normalized_input == vehicle_name or
+                normalized_input == name or
+                normalized_input == unique_id
+        ):
+                device = d
+                break
 
         if not device:
             return {
@@ -1101,43 +1098,27 @@ class SchoolEngine:
         }
 
         vehicle = {
-
         "vehicleName": (
             device.get("vehicleNumber")
             or device.get("vehicle_name")
             or device.get("name")
             or device.get("uniqueId")
         ),
-
         "deviceId": str(device.get("_id")),
-
         "uniqueId": device.get("uniqueId"),
-
         "status": device.get("status"),
-
         "model": device.get("model"),
-
         "category": device.get("category"),
-
         "speed": device.get("speed"),
-
-        # "totalKm": device.get("TotalKmOfDevice", 0)
-
     }
 
         return {
-
         "success": True,
-
         "school": {
-
             "schoolId": str(school["_id"]),
             "schoolName": school.get("schoolName")
-
         },
-
         "vehicle": vehicle
-
     }
     def find_school(self, school_name, role, user):
 

@@ -6,7 +6,8 @@ import re
 from school_engine import SchoolEngine
 from device_engine import DeviceEngine
 from vehicle_km_engine import VehicleKmEngine
-
+import re
+from bson import ObjectId
 
 class SchoolDeviceEngine:
 
@@ -716,13 +717,15 @@ class SchoolDeviceEngine:
  
     
     
+    
+
+
     def get_school_single_branch(
     self,
     branch_name,
     role,
     user
 ):
-
         try:
 
         # =====================================
@@ -730,25 +733,26 @@ class SchoolDeviceEngine:
         # =====================================
 
             if branch_name is None:
-
                 return {
                 "success": False,
                 "message": "Branch name is required."
             }
 
-            branch_name = str(branch_name).strip()
+            def normalize(text):
+                return re.sub(r"\s+", "", str(text or "")).lower()
 
-            if not branch_name:
+            normalized_input = normalize(branch_name)
 
+            if not normalized_input:
                 return {
                 "success": False,
                 "message": "Branch name is required."
             }
 
-            print("BRANCH NAME =", branch_name)
+            print("NORMALIZED INPUT =", normalized_input)
 
         # =====================================
-        # GET SCHOOL ID FROM NORMALIZED JWT
+        # GET SCHOOL ID
         # =====================================
 
             school_id = (
@@ -758,13 +762,10 @@ class SchoolDeviceEngine:
         )
 
             if not school_id:
-
                 return {
                 "success": False,
                 "message": "School ID not found in user."
             }
-
-            print("SCHOOL ID =", school_id)
 
         # =====================================
         # NORMALIZE SCHOOL ID
@@ -773,92 +774,40 @@ class SchoolDeviceEngine:
             school_ids = []
 
             try:
-
-                school_object_id = ObjectId(
-                str(school_id)
-            )
-
-                school_ids.append(
-                school_object_id
-            )
-
+                school_ids.append(ObjectId(str(school_id)))
             except Exception:
-
                 pass
 
-            school_ids.append(
-            str(school_id)
-        )
+            school_ids.append(str(school_id))
 
         # =====================================
-        # BRANCH SEARCH QUERY
+        # FETCH BRANCHES OF THIS SCHOOL
         # =====================================
 
-            branch_query = {
-
+            branches = self.db["branches"].find({
             "schoolId": {
-
                 "$in": school_ids
+            }
+        })
 
-            },
+            branch = None
 
-            "$or": [
+            for b in branches:
 
-                {
-                    "branchName": {
+                db_branch = normalize(b.get("branchName"))
+                db_username = normalize(b.get("username"))
 
-                        "$regex": re.escape(
-                            branch_name
-                        ),
-
-                        "$options": "i"
-
-                    }
-
-                },
-
-                {
-
-                    "username": {
-
-                        "$regex": re.escape(
-                            branch_name
-                        ),
-
-                        "$options": "i"
-
-                    }
-
-                }
-
-            ]
-
-        }
-
-            print(
-            "BRANCH SEARCH QUERY =",
-            branch_query
-        )
-
-        # =====================================
-        # FIND BRANCH
-        # =====================================
-
-            branch = self.db["branches"].find_one(
-            branch_query
-        )
+                if (
+                    db_branch == normalized_input or
+                    db_username == normalized_input
+            ):
+                    branch = b
+                    break
 
             if not branch:
-
                 return {
-
                 "success": False,
-
-                "message": (
-                    f"Branch '{branch_name}' "
-                    "not found under this school."
-                )
-
+                "message": f"Branch '{branch_name}' not found under this school."
             }
 
         # =====================================
@@ -866,64 +815,24 @@ class SchoolDeviceEngine:
         # =====================================
 
             return {
-
             "success": True,
-
             "branch": {
-
-                "branchId": str(
-                    branch["_id"]
-                ),
-
-                "branchName": branch.get(
-                    "branchName"
-                ),
-
-                "username": branch.get(
-                    "username"
-                ),
-
-                "email": branch.get(
-                    "email"
-                ),
-
-                "mobileNo": branch.get(
-                    "mobileNo"
-                ),
-
-                "schoolId": str(
-                    branch.get(
-                        "schoolId"
-                    )
-                )
-                if branch.get("schoolId")
-                else None,
-
-                "active": branch.get(
-                    "Active"
-                ),
-
-                "createdAt": branch.get(
-                    "createdAt"
-                )
-
+                "branchId": str(branch["_id"]),
+                "branchName": branch.get("branchName"),
+                "username": branch.get("username"),
+                "email": branch.get("email"),
+                "mobileNo": branch.get("mobileNo"),
+                "schoolId": str(branch.get("schoolId")) if branch.get("schoolId") else None,
+                "active": branch.get("Active"),
+                "createdAt": branch.get("createdAt")
             }
-
         }
 
         except Exception as e:
-
-            print(
-            "ERROR get_school_single_branch =",
-            repr(e)
-        )
-
+            print("ERROR get_school_single_branch =", repr(e))
             return {
-
             "success": False,
-
             "error": str(e)
-
         }
             
     def get_school_all_branches(
@@ -1140,6 +1049,8 @@ class SchoolDeviceEngine:
         
 
     }
+    import re
+
     def get_school_specific_branch_vehicle(
     self,
     branch_name,
@@ -1147,6 +1058,16 @@ class SchoolDeviceEngine:
     role,
     user
 ):
+
+    # =====================================
+    # NORMALIZE FUNCTION
+    # =====================================
+
+        def normalize(text):
+            return re.sub(r"\s+", "", str(text or "")).lower()
+
+        branch_input = normalize(branch_name)
+        vehicle_input = normalize(vehicle_input)
 
     # =====================================
     # GET LOGIN SCHOOL
@@ -1166,32 +1087,22 @@ class SchoolDeviceEngine:
     # FIND BRANCH OF LOGIN SCHOOL
     # =====================================
 
-        regex = re.compile(
-        re.escape(branch_name),
-        re.IGNORECASE
-    )
-
-        branch = self.db["branches"].find_one({
-
-        "$and": [
-
-            {
-                "$or": [
-                    {"schoolId": school_id},
-                    {"schoolId": str(school_id)}
-                ]
-            },
-
-            {
-                "$or": [
-                    {"branchName": regex},
-                    {"username": regex}
-                ]
-            }
-
+        branches = self.db["branches"].find({
+        "$or": [
+            {"schoolId": school_id},
+            {"schoolId": str(school_id)}
         ]
-
     })
+
+        branch = None
+
+        for b in branches:
+            if (
+            normalize(b.get("branchName")) == branch_input or
+            normalize(b.get("username")) == branch_input
+        ):
+                branch = b
+                break
 
         if not branch:
             return {
@@ -1205,40 +1116,40 @@ class SchoolDeviceEngine:
     # FIND VEHICLE
     # =====================================
 
-        regex = re.compile(
-        re.escape(vehicle_input),
-        re.IGNORECASE
-    )
-
-        device = self.db["devices"].find_one({
-
+        devices = self.db["devices"].find({
         "$and": [
-
             get_rbac_filter(
                 role,
                 user,
                 "devices",
                 self.db
             ),
-
             {
                 "$or": [
                     {"branchId": branch_id},
                     {"branchId": str(branch_id)}
                 ]
-            },
-
-            {
-                "$or": [
-                    {"vehicleName": regex},
-                    {"name": regex},
-                    {"uniqueId": vehicle_input}
-                ]
             }
-
         ]
-
     })
+
+        device = None
+
+        for d in devices:
+
+            vehicle_number = normalize(d.get("vehicleNumber"))
+            vehicle_name = normalize(d.get("vehicleName"))
+            name = normalize(d.get("name"))
+            unique_id = normalize(d.get("uniqueId"))
+
+            if (
+            vehicle_input == vehicle_number or
+            vehicle_input == vehicle_name or
+            vehicle_input == name or
+            vehicle_input == unique_id
+        ):
+                device = d
+                break
 
         if not device:
             return {
@@ -1247,21 +1158,30 @@ class SchoolDeviceEngine:
         }
 
         return {
-
-        "success": True,
-
-        "school": {
-            "schoolId": str(school_id)
-        },
-
-        "branch": {
-            "branchId": str(branch["_id"]),
-            "branchName": branch.get("branchName")
-        },
-
-        "vehicle": self.clean(device)
-
+    "success": True,
+    # "school": {
+    #     "schoolId": str(school_id)
+        
+    # },
+    "branch": {
+        # "branchId": str(branch["_id"]),
+        "branchName": branch.get("branchName")
+    },
+    "vehicle": {
+        "vehicleName": (
+            device.get("vehicleNumber")
+            or device.get("vehicleName")
+            or device.get("name")
+            or device.get("uniqueId")
+        ),
+        "deviceId": device.get("deviceId"),
+        "uniqueId": device.get("uniqueId"),
+        "status": device.get("status"),
+        "model": device.get("model"),
+        "category": device.get("category"),
+        "speed": device.get("speed")
     }
+}
     from bson import ObjectId
 
     def get_school_specific_branch_vehicle_status(

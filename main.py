@@ -1042,15 +1042,17 @@ def predefined_chat(
         # 10. SUCCESS RESPONSE
         # ==========================================
 
-        return {
+        # return {
 
-            "success": True,
+        #     "success": True,
 
-            "ui_type": "auto",
+        #     "ui_type": "auto",
 
-            "data": response
+        #     "data": response
 
-        }
+        # }
+        response["ui_type"] = "auto"
+        return response
 
 
     except HTTPException:

@@ -9,6 +9,10 @@ from report_status_engine import ReportStatusEngine
 from datetime import datetime, timedelta, timezone
 from bson import ObjectId
 import re
+from bson import ObjectId
+import re
+import re
+from bson import ObjectId
 class BranchGroupEngine:
 
     def __init__(self, db):
@@ -1436,6 +1440,10 @@ class BranchGroupEngine:
 
     }
         
+    
+    import re
+    from bson import ObjectId
+
     def get_branchgroup_specific_branch_vehicle_idle_report(
     self,
     group_id,
@@ -1445,6 +1453,16 @@ class BranchGroupEngine:
     user,
     limit=100
 ):
+
+    # =====================================
+    # NORMALIZE FUNCTION
+    # =====================================
+
+        def normalize(text):
+            return re.sub(r"\s+", "", str(text or "")).lower()
+
+        branch_input = normalize(branch_name)
+        vehicle_input = normalize(vehicle_input)
 
     # =====================================
     # GET GROUP ID
@@ -1459,7 +1477,7 @@ class BranchGroupEngine:
 
         try:
             group_id = ObjectId(str(group_id))
-        except:
+        except Exception:
             return {
             "success": False,
             "message": "Invalid Branch Group ID"
@@ -1485,34 +1503,22 @@ class BranchGroupEngine:
     # FIND BRANCH
     # =====================================
 
-        branch = self.db["branches"].find_one({
+        branches = self.db["branches"].find()
 
-        "$or": [
+        branch = None
 
-            {
-                "branchName": {
-                    "$regex": branch_name,
-                    "$options": "i"
-                }
-            },
+        for b in branches:
 
-            {
-                "name": {
-                    "$regex": branch_name,
-                    "$options": "i"
-                }
-            },
+            if str(b["_id"]) not in [str(x) for x in assigned_branches]:
+                continue
 
-            {
-                "username": {
-                    "$regex": branch_name,
-                    "$options": "i"
-                }
-            }
-
-        ]
-
-    })
+            if (
+            normalize(b.get("branchName")) == branch_input or
+            normalize(b.get("name")) == branch_input or
+            normalize(b.get("username")) == branch_input
+        ):
+                branch = b
+                break
 
         if not branch:
             return {
@@ -1523,51 +1529,30 @@ class BranchGroupEngine:
         branch_id = branch["_id"]
 
     # =====================================
-    # CHECK BRANCH BELONGS TO GROUP
-    # =====================================
-
-        if str(branch_id) not in [str(x) for x in assigned_branches]:
-            return {
-            "success": False,
-            "message": "This branch is not assigned to your Branch Group."
-        }
-
-    # =====================================
     # FIND VEHICLE
     # =====================================
 
-        vehicle_input = (
-        str(vehicle_input)
-        .strip()
-        .lower()
-        .replace(" ", "")
-    )
-
         devices = list(
-
-        self.db["devices"].find({
+            self.db["devices"].find({
             "branchId": branch_id
         })
-
     )
 
         matched_device = None
 
         for device in devices:
 
-            name = (
-            str(device.get("name", ""))
-            .lower()
-            .replace(" ", "")
-        )
+            vehicle_name = normalize(device.get("name"))
+            vehicle_number = normalize(device.get("vehicleNumber"))
+            unique_id = normalize(device.get("uniqueId"))
+            device_number = normalize(device.get("deviceId"))
 
-            uid = (
-            str(device.get("uniqueId", ""))
-            .lower()
-            .replace(" ", "")
-        )
-
-            if vehicle_input in name or vehicle_input == uid:
+            if (
+            vehicle_input == vehicle_name or
+            vehicle_input == vehicle_number or
+            vehicle_input == unique_id or
+            vehicle_input == device_number
+        ):
                 matched_device = device
                 break
 
@@ -1601,29 +1586,19 @@ class BranchGroupEngine:
     # =====================================
 
         reports = list(
-
         self.db["report_idles"]
-
         .find({
-
             "$and": [
-
                 idle_filter,
-
                 {
                     "uniqueId": {
                         "$in": unique_ids
                     }
                 }
-
             ]
-
         })
-
         .sort("idleStartTime", -1)
-
         .limit(limit)
-
     )
 
     # =====================================
@@ -1645,7 +1620,13 @@ class BranchGroupEngine:
         },
 
         "vehicle": {
-            "vehicleName": matched_device.get("name"),
+            "vehicleName": (
+                matched_device.get("vehicleNumber")
+                or matched_device.get("name")
+                or matched_device.get("vehicleName")
+                or matched_device.get("uniqueId")
+            ),
+            "deviceId": matched_device.get("deviceId"),
             "uniqueId": matched_device.get("uniqueId")
         },
 
@@ -4430,6 +4411,9 @@ class BranchGroupEngine:
         result
 
     }
+   
+
+
     def get_branchgroup_specific_branch(
     self,
     branch_name,
@@ -4440,23 +4424,19 @@ class BranchGroupEngine:
         try:
 
         # =====================================
-        # CLEAN INPUT
+        # NORMALIZE FUNCTION
         # =====================================
 
-            branch_name = str(branch_name).strip()
+            def normalize(text):
+                return re.sub(r"\s+", "", str(text or "")).lower()
 
+            branch_input = normalize(branch_name)
 
-            if not branch_name:
-
+            if not branch_input:
                 return {
-
                 "success": False,
-
                 "message": "Branch name missing"
-
             }
-
-
 
         # =====================================
         # GET GROUP ID
@@ -4467,69 +4447,35 @@ class BranchGroupEngine:
             or user.get("_id")
         )
 
-
             try:
-
-                group_id = ObjectId(
-                str(group_id)
-            )
-
-            except:
-
+                group_id = ObjectId(str(group_id))
+            except Exception:
                 return {
-
                 "success": False,
-
                 "message": "Invalid branch group id"
-
             }
-
-
 
         # =====================================
         # FIND BRANCH GROUP
         # =====================================
 
-            branch_group = self.db.branchgroups.find_one(
-            {
-                "_id": group_id
-            }
-        )
-
+            branch_group = self.db.branchgroups.find_one({
+            "_id": group_id
+        })
 
             if not branch_group:
-
                 return {
-
-                "success":False,
-
-                "message":"Branch group not found"
-
+                "success": False,
+                "message": "Branch group not found"
             }
 
-
-
-        # =====================================
-        # GET ASSIGNED BRANCH IDS
-        # =====================================
-
-            assigned_branches = branch_group.get(
-            "AssignedBranch",
-            []
-        )
-
+            assigned_branches = branch_group.get("AssignedBranch", [])
 
             if not assigned_branches:
-
                 return {
-
-                "success":False,
-
-                "message":"No branches assigned"
-
+                "success": False,
+                "message": "No branches assigned"
             }
-
-
 
         # =====================================
         # NORMALIZE IDS
@@ -4537,179 +4483,71 @@ class BranchGroupEngine:
 
             branch_object_ids = []
 
-
             for branch_id in assigned_branches:
-
                 try:
-
-                    branch_object_ids.append(
-                    ObjectId(str(branch_id))
-                )
-
-                except:
-
-                    branch_object_ids.append(
-                    branch_id
-                )
-
-
-
-        # =====================================
-        # SEARCH QUERY
-        # =====================================
-
-            query = {
-
-
-            "_id":{
-
-                "$in": branch_object_ids
-
-            },
-
-
-            "$or":[
-
-
-                {
-                    "branchName":{
-                        "$regex":branch_name,
-                        "$options":"i"
-                    }
-                },
-
-
-                {
-                    "username":{
-                        "$regex":branch_name,
-                        "$options":"i"
-                    }
-                },
-
-
-                {
-                    "vehicleName":{
-                        "$regex":branch_name,
-                        "$options":"i"
-                    }
-                },
-
-
-                {
-                    "name":{
-                        "$regex":branch_name,
-                        "$options":"i"
-                    }
-                }
-
-
-            ]
-
-        }
-
-
-
-            print("BRANCH SEARCH QUERY =",query)
-
-
+                    branch_object_ids.append(ObjectId(str(branch_id)))
+                except Exception:
+                    branch_object_ids.append(branch_id)
 
         # =====================================
         # FIND BRANCH
         # =====================================
 
-            branch = self.db.branches.find_one(
-            query
-        )
+            branches = self.db.branches.find({
+            "_id": {
+                "$in": branch_object_ids
+            }
+        })
 
+            branch = None
 
+            for b in branches:
+
+                db_branch = normalize(b.get("branchName"))
+                db_username = normalize(b.get("username"))
+                db_vehicle = normalize(b.get("vehicleName"))
+                db_name = normalize(b.get("name"))
+
+                if (
+                branch_input == db_branch or
+                branch_input == db_username or
+                branch_input == db_vehicle or
+                branch_input == db_name
+            ):
+                    branch = b
+                    break
 
             if not branch:
-
-
                 return {
-
-
-                "success":False,
-
-
-                "message":
-                "Branch not found in this branch group"
-
-
+                "success": False,
+                "message": "Branch not found in this branch group"
             }
-
-
 
         # =====================================
         # RESPONSE
         # =====================================
 
-
             return {
-
-
-            "success":True,
-
-
-            "branch":{
-
-
-                "branchId":
-                str(branch["_id"]),
-
-
-                "branchName":
-                branch.get("branchName"),
-
-
-                "username":
-                branch.get("username"),
-
-
-                "vehicleName":
-                branch.get("vehicleName"),
-
-
-                "mobileNo":
-                branch.get("mobileNo"),
-
-
-                "email":
-                branch.get("email"),
-
-
-                "schoolId":
-                str(branch.get("schoolId"))
-                if branch.get("schoolId")
-                else None,
-
-
-                "active":
-                branch.get("Active")
-
-
+            "success": True,
+            "branch": {
+                "branchId": str(branch["_id"]),
+                "branchName": branch.get("branchName"),
+                "username": branch.get("username"),
+                "vehicleName": branch.get("vehicleName"),
+                "mobileNo": branch.get("mobileNo"),
+                "email": branch.get("email"),
+                "schoolId": str(branch.get("schoolId")) if branch.get("schoolId") else None,
+                "active": branch.get("Active")
             }
-
-
         }
-
-
 
         except Exception as e:
 
-
-            print(
-            "ERROR get_branchgroup_specific_branch =",
-            e
-        )
-
+            print("ERROR get_branchgroup_specific_branch =", e)
 
             return {
-
-            "success":False,
-
-            "message":str(e)
-
+            "success": False,
+            "message": str(e)
         }
     def get_assigned_school_branchgroup(
     self,
@@ -4802,6 +4640,8 @@ class BranchGroupEngine:
         }
     }
     
+
+
     def get_branchgroup_specific_branch_vehicles(
     self,
     branch_name,
@@ -4813,20 +4653,20 @@ class BranchGroupEngine:
         try:
 
         # ===============================
-        # CLEAN INPUT
+        # NORMALIZE FUNCTION
         # ===============================
 
-            branch_name = str(branch_name).strip()
-            vehicle_input = str(vehicle_input).strip()
+            def normalize(text):
+                return re.sub(r"\s+", "", str(text or "")).lower()
 
+            branch_input = normalize(branch_name)
+            vehicle_input = normalize(vehicle_input)
 
-            if not branch_name or not vehicle_input:
-
+            if not branch_input or not vehicle_input:
                 return {
                 "success": False,
                 "message": "Branch name and vehicle name required"
             }
-
 
         # ===============================
         # GET GROUP ID
@@ -4837,165 +4677,134 @@ class BranchGroupEngine:
             or user.get("_id")
         )
 
-
             group_id = ObjectId(str(group_id))
-
 
         # ===============================
         # FIND BRANCH GROUP
         # ===============================
 
-            branch_group = self.db.branchgroups.find_one(
-            {
-                "_id": group_id
-            }
-        )
-
+            branch_group = self.db.branchgroups.find_one({
+            "_id": group_id
+        })
 
             if not branch_group:
-
                 return {
                 "success": False,
                 "message": "Branch group not found"
             }
-
 
             assigned_branches = branch_group.get(
             "AssignedBranch",
             []
         )
 
-
             branch_ids = []
 
             for b in assigned_branches:
-
                 try:
-                    branch_ids.append(
-                    ObjectId(str(b))
-                )
-                except:
+                    branch_ids.append(ObjectId(str(b)))
+                except Exception:
                     pass
-
-
 
         # ===============================
         # FIND BRANCH
         # ===============================
 
-            branch = self.db.branches.find_one(
-            {
-
-                "_id": {
-                    "$in": branch_ids
-                },
-
-                "branchName": {
-
-                    "$regex": branch_name,
-
-                    "$options": "i"
-                }
-
+            branches = self.db.branches.find({
+            "_id": {
+                "$in": branch_ids
             }
-        )
+        })
 
+            branch = None
+
+            for b in branches:
+
+                db_branch = normalize(b.get("branchName"))
+                db_username = normalize(b.get("username"))
+
+                if (
+                db_branch == branch_input or
+                db_username == branch_input
+            ):
+                    branch = b
+                    break
 
             if not branch:
-
                 return {
                 "success": False,
                 "message": "Branch not found"
             }
 
-
-
         # ===============================
         # FIND VEHICLE
         # ===============================
 
-            vehicle = self.db.devices.find_one(
+            vehicles = self.db.devices.find({
+            "branchId": branch["_id"]
+        })
 
-            {
+            vehicle = None
 
-                "branchId": branch["_id"],
+            for v in vehicles:
 
-                "$or": [
+                vehicle_name = normalize(v.get("name"))
+                vehicle_number = normalize(v.get("vehicleNumber"))
+                unique_id = normalize(v.get("uniqueId"))
+                device_number = normalize(v.get("deviceId"))
 
-                    {
-                        "name": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "deviceId": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    },
-
-                    {
-                        "uniqueId": {
-                            "$regex": vehicle_input,
-                            "$options": "i"
-                        }
-                    }
-
-                ]
-
-            }
-
-        )
-
+                if (
+                vehicle_input == vehicle_name or
+                vehicle_input == vehicle_number or
+                vehicle_input == unique_id or
+                vehicle_input == device_number
+            ):
+                    vehicle = v
+                    break
 
             if not vehicle:
-
                 return {
                 "success": False,
                 "message": "Vehicle not found in this branch"
             }
 
-
+        # ===============================
+        # RETURN RESPONSE
+        # ===============================
 
             return {
 
             "success": True,
 
             "branch": {
-
                 "branchId": str(branch["_id"]),
-
-                "branchName":
-                    branch.get("branchName")
-
+                "branchName": branch.get("branchName")
             },
 
             "vehicle": {
 
-                "deviceId":
-                    str(vehicle["_id"]),
+                "vehicleName": (
+                    vehicle.get("vehicleNumber")
+                    or vehicle.get("name")
+                    or vehicle.get("vehicleName")
+                    or vehicle.get("uniqueId")
+                ),
 
-                "vehicleName":
-                    vehicle.get("name"),
+                "deviceId": vehicle.get("deviceId"),
 
-                "uniqueId":
-                    vehicle.get("uniqueId"),
+                "uniqueId": vehicle.get("uniqueId"),
 
-                "deviceNumber":
-                    vehicle.get("deviceId"),
+                "status": vehicle.get("status"),
 
-                "status":
-                    vehicle.get("status"),
+                "model": vehicle.get("model"),
 
-                "model":
-                    vehicle.get("model")
+                "category": vehicle.get("category"),
+
+                "speed": vehicle.get("speed")
 
             }
 
         }
-
 
         except Exception as e:
 
@@ -5003,7 +4812,6 @@ class BranchGroupEngine:
             "success": False,
             "error": str(e)
         }
-   
     
 
     def get_branchgroup_branch_vehicles_1(
