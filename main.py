@@ -1041,18 +1041,19 @@ def predefined_chat(
         # ==========================================
         # 10. SUCCESS RESPONSE
         # ==========================================
+        response.pop("success", None)
+        return {
 
-        # return {
+            "success": True,
+            
+            "ui_type": "auto",
+            "data": response
 
-        #     "success": True,
+            
 
-        #     "ui_type": "auto",
-
-        #     "data": response
-
-        # }
-        response["ui_type"] = "auto"
-        return response
+        }
+        # response["ui_type"] = "auto"
+        # return response
 
 
     except HTTPException:

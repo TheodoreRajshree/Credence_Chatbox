@@ -1579,6 +1579,7 @@ def execute_predefined_question(
         role,
         user
     )
+                    
             # ---------------- BRANCH ----------------
             else:
 
@@ -1620,13 +1621,14 @@ def execute_predefined_question(
 
         result = serialize(result)
 
-# If the engine returned an error, propagate it.
-        if isinstance(result, dict) and result.get("success") is False:
-            result["question"] = question["question"]
-            return result
+        if isinstance(result, dict):
 
-# Otherwise return success.
-        result["question"] = question["question"]
+            result = {
+        "success": result.get("success", False),
+        "question": question["question"],
+        **{k: v for k, v in result.items() if k != "success"}
+    }
+
         return result
 
     except Exception as e:
