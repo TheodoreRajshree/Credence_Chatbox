@@ -1579,7 +1579,6 @@ def execute_predefined_question(
         role,
         user
     )
-                    
             # ---------------- BRANCH ----------------
             else:
 
@@ -1623,16 +1622,30 @@ def execute_predefined_question(
 
         if isinstance(result, dict):
 
-            result = {
-        "success": result.get("success", False),
+    # Error
+            if result.get("success") is False:
+                result["question"] = question["question"]
+                return result
+
+    # Remove first success
+            result.pop("success", None)
+
+    # If result contains nested data dict, remove its success too
+            if isinstance(result.get("data"), dict):
+                result["data"].pop("success", None)
+
+            return {
+        "success": True,
         "question": question["question"],
-        **{k: v for k, v in result.items() if k != "success"}
+        **result
     }
 
-        return result
-
+        return {
+    "success": True,
+    "question": question["question"],
+    "data": result
+}
     except Exception as e:
-
         return {
             "success": False,
             "error": str(e)

@@ -1041,7 +1041,7 @@ def predefined_chat(
         # ==========================================
         # 10. SUCCESS RESPONSE
         # ==========================================
-        response.pop("success", None)
+        
         return {
 
             "success": True,
